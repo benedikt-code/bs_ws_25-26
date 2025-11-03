@@ -15,12 +15,35 @@ static inline void gpio_af7_usart2_pa2_pd6(void) {
     // and instead route signals to/from USART2
 
     // PA2 -> AF7 (USART2_TX)
+    /* MODER sagt wie unser Pin sich verhalten soll (4 Modes)
+     * 00 Input Mode
+     * 01 General Purpose Output
+     * 10 Alternate function
+     * 11 Analog Mode */
     GPIOA->MODER   &= ~(0x3u << (2*2));
     GPIOA->MODER   |=  (0x2u << (2*2));
+    /* AFR entscheidet, welche Alternate Function wir nutzen
+     * [0] bezieht sich auf die Pins 0-7
+     * [1] bezieht sich auf die Pins 8-15
+     * Für jeden Pin sind 4-bits vorgesehen, die wir alle löschen
+     * und dann mit der alternate Function belegen die wir brauchen (0-15)*/
     GPIOA->AFR[0]  &= ~(0xFu << (4*2));
     GPIOA->AFR[0]  |=  (0x7u << (4*2));
+    /* OSPEEDR sagt wie schnell unser Pin den output state switchen kann (4 Modes)
+	 * 00 slow (für Leds GPIOs)
+	 * 01 medium (für General I/O)
+	 * 10 fast
+	 * 11 super fast (für UART */
+    // Wir müssen nicht clearen weil wir eh mit 11 ver"odern"
     GPIOA->OSPEEDR |=  (0x3u << (2*2));
+    /* OTYPER there are two types 0 push pull und 1 open drain für Uart nutzt man push pull */
     GPIOA->OTYPER  &= ~(1u   << 2);
+    /* PUPDR sagt wie stellt die pull up pull down resistor (4 Modes)
+	 * 00 pullup/down deactivated
+	 * 01 nur pull up
+	 * 10 nur pull down
+	 * 11 reserved (hardware unterstützt das nicht, ist nicht setzbar)
+	 * Wir deaktivieren es */
     GPIOA->PUPDR   &= ~(0x3u << (2*2));
 
     // PD6 -> AF7 (USART2_RX)
