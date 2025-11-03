@@ -6,7 +6,13 @@
 #endif
 
 static inline void gpio_af7_usart2_pa2_pd6(void) {
+	//Bus AHB2ENR Zugriff - Ports A und D "freischalten"(für Pin A2, D6)
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIODEN;
+
+    // PA2 und PD6 werden zur Alternate Function 7 gemapped
+    // diese ist widerum mit USART2 gemapped --> kein GPIO Pin mehr
+    // PA2 and PD6 should stop acting like general GPIOs
+    // and instead route signals to/from USART2
 
     // PA2 -> AF7 (USART2_TX)
     GPIOA->MODER   &= ~(0x3u << (2*2));

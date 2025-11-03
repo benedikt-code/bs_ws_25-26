@@ -100,3 +100,39 @@ Command-line arguments:  -os win32 -ws win32 -arch x86_64
 
 !ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-11-03 20:01:01.891
 !MESSAGE Started RMI Server, listening on port 41337
+!SESSION 2025-11-03 20:29:39.450 -----------------------------------------------
+eclipse.buildId=Version 1.19.0
+java.version=21.0.3
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=de_DE
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2025-11-03 20:29:44.794
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2025-11-03 20:29:44.795
+!MESSAGE Log4j2 initialized with config file C:\Users\bened\Desktop\1. Mastersemester\BS_Code\.metadata\.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-11-03 20:29:51.373
+!MESSAGE Started RMI Server, listening on port 41337
+!SESSION 2025-11-03 20:32:19.970 -----------------------------------------------
+eclipse.buildId=Version 1.19.0
+java.version=21.0.3
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=de_DE
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2025-11-03 20:32:24.350
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2025-11-03 20:32:24.351
+!MESSAGE Log4j2 initialized with config file C:\Users\bened\Desktop\1. Mastersemester\BS_Code\.metadata\.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-11-03 20:32:29.115
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-11-03 20:36:02.112
+!MESSAGE Indexed 'os_linnert' (54 sources, 155 headers) in 5.1 sec: 18,617 declarations; 116,318 references; 3 unresolved inclusions; 47 syntax errors; 171 unresolved names (0.13%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-11-03 20:44:20.304
+!MESSAGE Indexed 'Test' (52 sources, 112 headers) in 4.01 sec: 12,199 declarations; 93,143 references; 0 unresolved inclusions; 1 syntax errors; 2 unresolved names (0.0019%)
