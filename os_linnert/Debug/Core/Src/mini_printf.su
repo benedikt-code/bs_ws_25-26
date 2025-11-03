@@ -1,0 +1,2 @@
+../Core/Src/mini_printf.c:5:13:put_hex_nibbles	32	static
+../Core/Src/mini_printf.c:13:5:mini_printf	32	static
