@@ -2,50 +2,71 @@
 #include <stdint.h>
 #include "uart.h"
 
-static void put_hex_nibbles(uintptr_t v, unsigned n) {
-    for (int i = (int)n - 1; i >= 0; --i) {
-        unsigned nib = (unsigned)((v >> (i*4)) & 0xF);
-        char ch = (nib < 10) ? ('0' + nib) : ('a' + (nib - 10));
-        uart2_putc(ch);
+// Helper: print Hexadezimal mit fixer anzahl an bits
+static void uart_write_hex(uintptr_t value, unsigned num_hex_digits) {
+    for (int i = (int)num_hex_digits - 1; i >= 0; --i) {
+        unsigned hex_digit = (unsigned)((value >> (i*4)) & 0xF);
+        char hex_char = (hex_digit < 10) ? ('0' + hex_digit) : ('a' + (hex_digit - 10));
+        uart2_putc(hex_char);
     }
 }
 
-int mini_printf(const char *fmt, ...) {
+__attribute__((format(printf, 1, 2)))
+int uart_printf(const char *format, ...) {
+	// va_* for iterating the variable arguments
     va_list ap;
-    va_start(ap, fmt);
-    for (const char *p = fmt; *p; ++p) {
-        if (*p != '%') {
-            if (*p == '\n') uart2_putc('\r');
-            uart2_putc(*p);
+    va_start(ap, format);
+
+    // iterieren durch jeden character in format
+    for (const char *current_char = format; *current_char; ++current_char) {
+
+    	// default case: kein % charakter
+        if (*current_char != '%') {
+            if (*current_char == '\n') uart2_putc('\r');
+            uart2_putc(*current_char);
             continue;
         }
-        ++p;
-        switch (*p) {
+
+        // wenn % charakter: specifier anschauen
+        ++current_char;
+        switch (*current_char) {
+
+        // %
         case '%': uart2_putc('%'); break;
+        // character
         case 'c': {
-            unsigned v = va_arg(ap, unsigned);
-            uart2_putc((unsigned char)v);
+            unsigned char_value = va_arg(ap, unsigned);
+            uart2_putc((unsigned char)char_value);
             break;
         }
+        // string
         case 's': {
-            const char *s = va_arg(ap, const char *);
-            if (!s) s = "(null)";
-            uart2_write(s);
+            const char *string_value = va_arg(ap, const char *);
+            // defensiv: falls NULL string
+            if (!string_value) string_value = "(null)";
+            uart2_write(string_value);
             break;
         }
+        // hexadecimal
         case 'x': {
-            unsigned v = va_arg(ap, unsigned);
-            put_hex_nibbles((uintptr_t)v, 8);
+            unsigned int_value = va_arg(ap, unsigned);
+            uart_write_hex((uintptr_t)int_value, 8);
             break;
         }
+        // pointer
         case 'p': {
-            uintptr_t v = (uintptr_t)va_arg(ap, void *);
+            uintptr_t pointer_value = (uintptr_t)va_arg(ap, void *);
             uart2_write("0x");
-            put_hex_nibbles(v, (unsigned)(sizeof(uintptr_t) * 2));
+            uart_write_hex(pointer_value, (unsigned)(sizeof(uintptr_t) * 2));
             break;
         }
+        // default case: kein spezifizierter character
         default:
-            uart2_putc('%'); uart2_putc(*p); break;
+            uart2_putc('%');
+            // for the rare typo of "%\n"
+            if (*p == '\n') uart2_putc('\r');
+            uart2_putc(*p);
+            break;
         }
     }
     va_end(ap);
