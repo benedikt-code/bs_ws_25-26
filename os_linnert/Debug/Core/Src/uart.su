@@ -1,5 +1,5 @@
 ../Core/Src/uart.c:8:20:gpio_af7_usart2_pa2_pd6	4	static
-../Core/Src/uart.c:30:6:uart2_init	24	static
-../Core/Src/uart.c:46:6:uart2_putc	16	static
-../Core/Src/uart.c:51:6:uart2_write	16	static
-../Core/Src/uart.c:58:5:uart2_getc_blocking	4	static
+../Core/Src/uart.c:60:6:uart2_init	24	static
+../Core/Src/uart.c:114:6:uart2_putc	16	static
+../Core/Src/uart.c:125:6:uart2_write	16	static
+../Core/Src/uart.c:132:5:uart2_getc_blocking	4	static
