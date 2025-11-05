@@ -59,8 +59,8 @@ all: main-build
 main-build: os_linnert.elf secondary-outputs
 
 # Tool invocations
-os_linnert.elf os_linnert.map: $(OBJS) $(USER_OBJS) C:\Users\bened\Desktop\1.\ Mastersemester\BS_Code\bs_ws_25-26\os_linnert\STM32L496AGIX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "os_linnert.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\bened\Desktop\1. Mastersemester\BS_Code\bs_ws_25-26\os_linnert\STM32L496AGIX_FLASH.ld" --specs=nosys.specs -Wl,-Map="os_linnert.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+os_linnert.elf os_linnert.map: $(OBJS) $(USER_OBJS) C:\Users\bened\Desktop\1.\ Mastersemester\BS_Code\bs_ws_25-26\Uebung1\os_linnert\STM32L496AGIX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "os_linnert.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\bened\Desktop\1. Mastersemester\BS_Code\bs_ws_25-26\Uebung1\os_linnert\STM32L496AGIX_FLASH.ld" --specs=nosys.specs -Wl,-Map="os_linnert.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
