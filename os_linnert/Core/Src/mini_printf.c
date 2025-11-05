@@ -64,8 +64,8 @@ int uart_printf(const char *format, ...) {
         default:
             uart2_putc('%');
             // for the rare typo of "%\n"
-            if (*p == '\n') uart2_putc('\r');
-            uart2_putc(*p);
+            if (*current_char == '\n') uart2_putc('\r');
+            uart2_putc(*current_char);
             break;
         }
     }

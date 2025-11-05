@@ -6,4 +6,4 @@ void uart2_putc(char c);
 void uart2_write(const char *s);
 int  uart2_getc_blocking(void);
 
-int mini_printf(const char *fmt, ...);
+int uart_printf(const char *fmt, ...);

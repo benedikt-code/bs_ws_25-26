@@ -27,9 +27,9 @@
 
 int main(void) {
     uart2_init(115200);
-    mini_printf("UART ready.\n");
+    uart_printf("UART ready.\n");
     for (;;) {
         int c = uart2_getc_blocking();
-        mini_printf("Zeichen erhalten: '%c'\n", c);
+        uart_printf("Zeichen erhalten: '%c'\n", c);
     }
 }

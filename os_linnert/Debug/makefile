@@ -9,11 +9,6 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include USB_DEVICE/Target/subdir.mk
--include USB_DEVICE/App/subdir.mk
--include Middlewares/ST/STM32_USB_Device_Library/Core/Src/subdir.mk
--include Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/subdir.mk
--include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk
@@ -64,8 +59,8 @@ all: main-build
 main-build: os_linnert.elf secondary-outputs
 
 # Tool invocations
-os_linnert.elf os_linnert.map: $(OBJS) $(USER_OBJS) C:\Users\bened\Desktop\1.\ Mastersemester\BS_Code\os_linnert\STM32L496AGIX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "os_linnert.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\bened\Desktop\1. Mastersemester\BS_Code\os_linnert\STM32L496AGIX_FLASH.ld" --specs=nosys.specs -Wl,-Map="os_linnert.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+os_linnert.elf os_linnert.map: $(OBJS) $(USER_OBJS) /Users/andre/bs_ws_25-26/os_linnert/STM32L496AGIX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "os_linnert.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/andre/bs_ws_25-26/os_linnert/STM32L496AGIX_FLASH.ld" --specs=nosys.specs -Wl,-Map="os_linnert.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
