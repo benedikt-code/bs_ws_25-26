@@ -79,40 +79,6 @@ Discarded input sections
  .group         0x00000000        0xc ./Core/Src/main.o
  .group         0x00000000        0xc ./Core/Src/main.o
  .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
- .group         0x00000000        0xc ./Core/Src/main.o
  .text          0x00000000        0x0 ./Core/Src/main.o
  .data          0x00000000        0x0 ./Core/Src/main.o
  .bss           0x00000000        0x0 ./Core/Src/main.o
@@ -134,40 +100,6 @@ Discarded input sections
  .debug_macro   0x00000000      0x103 ./Core/Src/mini_printf.o
  .debug_macro   0x00000000       0x6a ./Core/Src/mini_printf.o
  .debug_macro   0x00000000      0x1df ./Core/Src/mini_printf.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
  .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
  .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
  .group         0x00000000        0xc ./Core/Src/system_stm32l4xx.o
@@ -213,74 +145,6 @@ Discarded input sections
  .debug_macro   0x00000000      0x11f ./Core/Src/system_stm32l4xx.o
  .debug_macro   0x00000000    0x1c1e2 ./Core/Src/system_stm32l4xx.o
  .debug_macro   0x00000000       0x6d ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x1dd ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000     0x38fb ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x190 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000       0x5c ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000     0x187d ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x773 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x1b9 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x202 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x26b ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x2a3 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x23d ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0xfad ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x639 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x31a ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x22c ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x241 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x3ad ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000       0xe4 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x22c ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000       0x61 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000       0xa5 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x215 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000       0x97 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x122 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x3ef ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x2d4 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x447 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x77a ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x1d5 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x2fe ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x327 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x5cf ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000       0x44 ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00000000      0x433 ./Core/Src/system_stm32l4xx.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
- .group         0x00000000        0xc ./Core/Src/uart.o
  .group         0x00000000        0xc ./Core/Src/uart.o
  .group         0x00000000        0xc ./Core/Src/uart.o
  .group         0x00000000        0xc ./Core/Src/uart.o
@@ -316,40 +180,6 @@ Discarded input sections
  .debug_macro   0x00000000      0x11f ./Core/Src/uart.o
  .debug_macro   0x00000000    0x1c1e2 ./Core/Src/uart.o
  .debug_macro   0x00000000       0x6d ./Core/Src/uart.o
- .debug_macro   0x00000000      0x1dd ./Core/Src/uart.o
- .debug_macro   0x00000000     0x38fb ./Core/Src/uart.o
- .debug_macro   0x00000000      0x190 ./Core/Src/uart.o
- .debug_macro   0x00000000       0x5c ./Core/Src/uart.o
- .debug_macro   0x00000000     0x187d ./Core/Src/uart.o
- .debug_macro   0x00000000      0x773 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x1b9 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x202 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x26b ./Core/Src/uart.o
- .debug_macro   0x00000000      0x2a3 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x23d ./Core/Src/uart.o
- .debug_macro   0x00000000      0xfad ./Core/Src/uart.o
- .debug_macro   0x00000000      0x639 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x31a ./Core/Src/uart.o
- .debug_macro   0x00000000      0x22c ./Core/Src/uart.o
- .debug_macro   0x00000000      0x241 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x3ad ./Core/Src/uart.o
- .debug_macro   0x00000000       0xe4 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x22c ./Core/Src/uart.o
- .debug_macro   0x00000000       0x61 ./Core/Src/uart.o
- .debug_macro   0x00000000       0xa5 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x215 ./Core/Src/uart.o
- .debug_macro   0x00000000       0x97 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x122 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x3ef ./Core/Src/uart.o
- .debug_macro   0x00000000      0x2d4 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x447 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x77a ./Core/Src/uart.o
- .debug_macro   0x00000000      0x1d5 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x2fe ./Core/Src/uart.o
- .debug_macro   0x00000000      0x327 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x5cf ./Core/Src/uart.o
- .debug_macro   0x00000000       0x44 ./Core/Src/uart.o
- .debug_macro   0x00000000      0x433 ./Core/Src/uart.o
  .text          0x00000000       0x14 ./Core/Startup/startup_stm32l496agix.o
  .data          0x00000000        0x0 ./Core/Startup/startup_stm32l496agix.o
  .bss           0x00000000        0x0 ./Core/Startup/startup_stm32l496agix.o
@@ -958,12 +788,12 @@ LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
 LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libm.a
 LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v7e-m+fp/hard\libgcc.a
 
-.debug_info     0x00000000      0xe1d
- .debug_info    0x00000000      0x105 ./Core/Src/main.o
- .debug_info    0x00000105      0x212 ./Core/Src/mini_printf.o
- .debug_info    0x00000317      0x5cd ./Core/Src/system_stm32l4xx.o
- .debug_info    0x000008e4      0x509 ./Core/Src/uart.o
- .debug_info    0x00000ded       0x30 ./Core/Startup/startup_stm32l496agix.o
+.debug_info     0x00000000      0xe08
+ .debug_info    0x00000000       0xfe ./Core/Src/main.o
+ .debug_info    0x000000fe      0x212 ./Core/Src/mini_printf.o
+ .debug_info    0x00000310      0x5c6 ./Core/Src/system_stm32l4xx.o
+ .debug_info    0x000008d6      0x502 ./Core/Src/uart.o
+ .debug_info    0x00000dd8       0x30 ./Core/Startup/startup_stm32l496agix.o
 
 .debug_abbrev   0x00000000      0x463
  .debug_abbrev  0x00000000       0xcd ./Core/Src/main.o
@@ -997,77 +827,43 @@ LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_rnglists
                 0x00000074       0x19 ./Core/Startup/startup_stm32l496agix.o
 
-.debug_macro    0x00000000    0x2a1f5
- .debug_macro   0x00000000      0x280 ./Core/Src/main.o
- .debug_macro   0x00000280      0xad8 ./Core/Src/main.o
- .debug_macro   0x00000d58       0x22 ./Core/Src/main.o
- .debug_macro   0x00000d7a       0x8e ./Core/Src/main.o
- .debug_macro   0x00000e08       0x51 ./Core/Src/main.o
- .debug_macro   0x00000e59      0x103 ./Core/Src/main.o
- .debug_macro   0x00000f5c       0x6a ./Core/Src/main.o
- .debug_macro   0x00000fc6      0x1df ./Core/Src/main.o
- .debug_macro   0x000011a5       0x2e ./Core/Src/main.o
- .debug_macro   0x000011d3       0x28 ./Core/Src/main.o
- .debug_macro   0x000011fb       0x1c ./Core/Src/main.o
- .debug_macro   0x00001217       0x22 ./Core/Src/main.o
- .debug_macro   0x00001239       0xfb ./Core/Src/main.o
- .debug_macro   0x00001334     0x1011 ./Core/Src/main.o
- .debug_macro   0x00002345      0x11f ./Core/Src/main.o
- .debug_macro   0x00002464    0x1c1e2 ./Core/Src/main.o
- .debug_macro   0x0001e646       0x6d ./Core/Src/main.o
- .debug_macro   0x0001e6b3      0x1dd ./Core/Src/main.o
- .debug_macro   0x0001e890     0x38fb ./Core/Src/main.o
- .debug_macro   0x0002218b      0x190 ./Core/Src/main.o
- .debug_macro   0x0002231b       0x5c ./Core/Src/main.o
- .debug_macro   0x00022377     0x187d ./Core/Src/main.o
- .debug_macro   0x00023bf4      0x773 ./Core/Src/main.o
- .debug_macro   0x00024367      0x1b9 ./Core/Src/main.o
- .debug_macro   0x00024520      0x202 ./Core/Src/main.o
- .debug_macro   0x00024722      0x26b ./Core/Src/main.o
- .debug_macro   0x0002498d      0x2a3 ./Core/Src/main.o
- .debug_macro   0x00024c30      0x23d ./Core/Src/main.o
- .debug_macro   0x00024e6d      0xfad ./Core/Src/main.o
- .debug_macro   0x00025e1a      0x639 ./Core/Src/main.o
- .debug_macro   0x00026453      0x31a ./Core/Src/main.o
- .debug_macro   0x0002676d      0x22c ./Core/Src/main.o
- .debug_macro   0x00026999      0x241 ./Core/Src/main.o
- .debug_macro   0x00026bda      0x3ad ./Core/Src/main.o
- .debug_macro   0x00026f87       0xe4 ./Core/Src/main.o
- .debug_macro   0x0002706b      0x22c ./Core/Src/main.o
- .debug_macro   0x00027297       0x61 ./Core/Src/main.o
- .debug_macro   0x000272f8       0xa5 ./Core/Src/main.o
- .debug_macro   0x0002739d      0x215 ./Core/Src/main.o
- .debug_macro   0x000275b2       0x97 ./Core/Src/main.o
- .debug_macro   0x00027649      0x122 ./Core/Src/main.o
- .debug_macro   0x0002776b      0x3ef ./Core/Src/main.o
- .debug_macro   0x00027b5a      0x2d4 ./Core/Src/main.o
- .debug_macro   0x00027e2e      0x447 ./Core/Src/main.o
- .debug_macro   0x00028275      0x77a ./Core/Src/main.o
- .debug_macro   0x000289ef      0x1d5 ./Core/Src/main.o
- .debug_macro   0x00028bc4      0x2fe ./Core/Src/main.o
- .debug_macro   0x00028ec2      0x327 ./Core/Src/main.o
- .debug_macro   0x000291e9      0x5cf ./Core/Src/main.o
- .debug_macro   0x000297b8       0x44 ./Core/Src/main.o
- .debug_macro   0x000297fc      0x433 ./Core/Src/main.o
- .debug_macro   0x00029c2f       0x70 ./Core/Src/mini_printf.o
- .debug_macro   0x00029c9f       0x58 ./Core/Src/mini_printf.o
- .debug_macro   0x00029cf7      0x27c ./Core/Src/system_stm32l4xx.o
- .debug_macro   0x00029f73      0x282 ./Core/Src/uart.o
+.debug_macro    0x00000000    0x1e781
+ .debug_macro   0x00000000       0xd2 ./Core/Src/main.o
+ .debug_macro   0x000000d2      0xad8 ./Core/Src/main.o
+ .debug_macro   0x00000baa       0x22 ./Core/Src/main.o
+ .debug_macro   0x00000bcc       0x8e ./Core/Src/main.o
+ .debug_macro   0x00000c5a       0x51 ./Core/Src/main.o
+ .debug_macro   0x00000cab      0x103 ./Core/Src/main.o
+ .debug_macro   0x00000dae       0x6a ./Core/Src/main.o
+ .debug_macro   0x00000e18      0x1df ./Core/Src/main.o
+ .debug_macro   0x00000ff7       0x2e ./Core/Src/main.o
+ .debug_macro   0x00001025       0x28 ./Core/Src/main.o
+ .debug_macro   0x0000104d       0x1c ./Core/Src/main.o
+ .debug_macro   0x00001069       0x22 ./Core/Src/main.o
+ .debug_macro   0x0000108b       0xfb ./Core/Src/main.o
+ .debug_macro   0x00001186     0x1011 ./Core/Src/main.o
+ .debug_macro   0x00002197      0x11f ./Core/Src/main.o
+ .debug_macro   0x000022b6    0x1c1e2 ./Core/Src/main.o
+ .debug_macro   0x0001e498       0x6d ./Core/Src/main.o
+ .debug_macro   0x0001e505       0x70 ./Core/Src/mini_printf.o
+ .debug_macro   0x0001e575       0x58 ./Core/Src/mini_printf.o
+ .debug_macro   0x0001e5cd       0xe0 ./Core/Src/system_stm32l4xx.o
+ .debug_macro   0x0001e6ad       0xd4 ./Core/Src/uart.o
 
-.debug_line     0x00000000     0x2201
- .debug_line    0x00000000      0x8bf ./Core/Src/main.o
- .debug_line    0x000008bf      0x51e ./Core/Src/mini_printf.o
- .debug_line    0x00000ddd      0x960 ./Core/Src/system_stm32l4xx.o
- .debug_line    0x0000173d      0xa4a ./Core/Src/uart.o
- .debug_line    0x00002187       0x7a ./Core/Startup/startup_stm32l496agix.o
+.debug_line     0x00000000     0x1697
+ .debug_line    0x00000000      0x4f9 ./Core/Src/main.o
+ .debug_line    0x000004f9      0x51e ./Core/Src/mini_printf.o
+ .debug_line    0x00000a17      0x58e ./Core/Src/system_stm32l4xx.o
+ .debug_line    0x00000fa5      0x678 ./Core/Src/uart.o
+ .debug_line    0x0000161d       0x7a ./Core/Startup/startup_stm32l496agix.o
 
-.debug_str      0x00000000   0x11330b
- .debug_str     0x00000000   0x11330b ./Core/Src/main.o
-                             0x1132be (size before relaxing)
- .debug_str     0x0011330b     0x3faf ./Core/Src/mini_printf.o
- .debug_str     0x0011330b   0x1134d5 ./Core/Src/system_stm32l4xx.o
- .debug_str     0x0011330b   0x1134b9 ./Core/Src/uart.o
- .debug_str     0x0011330b       0x92 ./Core/Startup/startup_stm32l496agix.o
+.debug_str      0x00000000    0xa940b
+ .debug_str     0x00000000    0xa940b ./Core/Src/main.o
+                              0xa9070 (size before relaxing)
+ .debug_str     0x000a940b     0x3fb7 ./Core/Src/mini_printf.o
+ .debug_str     0x000a940b    0xa92c1 ./Core/Src/system_stm32l4xx.o
+ .debug_str     0x000a940b    0xa926b ./Core/Src/uart.o
+ .debug_str     0x000a940b       0x9a ./Core/Startup/startup_stm32l496agix.o
 
 .comment        0x00000000       0x43
  .comment       0x00000000       0x43 ./Core/Src/main.o
@@ -1084,6 +880,6 @@ LOAD C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .debug_frame   0x000001b8       0x2c C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libc_nano.a(libc_a-init.o)
 
 .debug_line_str
-                0x00000000       0x76
+                0x00000000       0x7e
  .debug_line_str
-                0x00000000       0x76 ./Core/Startup/startup_stm32l496agix.o
+                0x00000000       0x7e ./Core/Startup/startup_stm32l496agix.o

@@ -283,7 +283,7 @@ typedef enum
 /**
   * @}
   */
-
+/*
 #if defined (USE_HAL_DRIVER)
  #include "stm32l4xx_hal.h"
 #endif /* USE_HAL_DRIVER */
