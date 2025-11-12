@@ -1,2 +1,0 @@
-../Core/Src/mini_printf.c:6:13:uart_write_hex	32	static
-../Core/Src/mini_printf.c:15:5:uart_printf	32	static
