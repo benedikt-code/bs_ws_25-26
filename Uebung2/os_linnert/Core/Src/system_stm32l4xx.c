@@ -205,6 +205,14 @@ void SystemInit(void)
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
   SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
 #endif
+
+  // Usage/ Bus/ MemManage Faults aktivieren
+  SCB->SHCSR |= (SCB_SHCSR_USGFAULTENA_Msk |
+		  	  	 SCB_SHCSR_BUSFAULTENA_Msk |
+				 SCB_SHCSR_MEMFAULTENA_Msk);
+
+  // Division by Zero Trap aktivieren
+  SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 }
 
 /**

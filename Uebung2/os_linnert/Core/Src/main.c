@@ -24,12 +24,43 @@
 
 #include "stm32l4xx.h"
 #include "uart.h"
+#include "exception_handlers.h"
 
+void UsageFault_Handler(void) {
+    uart_printf("\n=== USAGE FAULT ===\n");
+
+    uint32_t ufsr = (SCB->CFSR >> 16) & 0xFFFF;
+    uart_printf("UFSR: 0x%x\n", ufsr);
+
+    if (ufsr & SCB_CFSR_UNDEFINSTR_Msk) {
+        uart_printf("Undefined instruction\n");
+    }
+    if (ufsr & SCB_CFSR_INVSTATE_Msk) {
+        uart_printf("Invalid state\n");
+    }
+    if (ufsr & SCB_CFSR_INVPC_Msk) {
+        uart_printf("Invalid PC load\n");
+    }
+    if (ufsr & SCB_CFSR_NOCP_Msk) {
+        uart_printf("No coprocessor\n");
+    }
+    if (ufsr & SCB_CFSR_DIVBYZERO_Msk) {
+        uart_printf("Division by zero\n");
+    }
+
+    while(1) { __WFI(); }
+}
+
+// Erweitere deine main()-Funktion:
 int main(void) {
+    init_stacks(); // Stack-Initialisierung
     uart2_init(115200);
-    uart_printf("UART ready.\n");
+    uart_printf("Exception Handler Test ready.\n");
+    uart_printf("Commands: 1=UsageFault(div0), 2=UsageFault(undIns), 3=BusFault, 4=SVC\n");
+
     for (;;) {
         int c = uart2_getc_blocking();
-        uart_printf("Zeichen erhalten: '%c'\n", c);
+        uart_printf("Command: '%c'\n", c);
+        test_exceptions((char)c);
     }
 }

@@ -543,5 +543,5 @@ g_pfnVectors:
 	.thumb_set CAN2_SCE_IRQHandler,Default_Handler 
 	
 	.weak	DMA2D_IRQHandler
-	.thumb_set FPU_IRQHandler,Default_Handler    
+	.thumb_set DMA2D_IRQHandler,Default_Handler
 
