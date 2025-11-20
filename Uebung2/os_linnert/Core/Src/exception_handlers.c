@@ -53,7 +53,7 @@ void test_exceptions(char command) {
 
         case '3': // BusFault - Imprecise data bus error
             uart_printf("Triggering BusFault (invalid address access)...\n");
-            *(volatile uint32_t*)0x50000000 = 0x12345678;
+            *(volatile uint32_t*)0xFFFFFFFF = 0x12345678;
             break;
 
         case '4': // SVC Call
@@ -123,10 +123,37 @@ void MemManage_Handler(void) {
     while(1) { __WFI(); }
 }
 
+void UsageFault_Handler(void) {
+    uart_printf("\n=== USAGE FAULT ===\n");
+
+    uint32_t ufsr = (SCB->CFSR) & 0xFFFFFFFF;
+
+    uart_printf("UFSR: 0x%x\n", ufsr);
+
+
+    if (ufsr & SCB_CFSR_UNDEFINSTR_Msk) {
+        uart_printf("Undefined instruction\n");
+    }
+    if (ufsr & SCB_CFSR_INVSTATE_Msk) {
+        uart_printf("Invalid state\n");
+    }
+    if (ufsr & SCB_CFSR_INVPC_Msk) {
+        uart_printf("Invalid PC load\n");
+    }
+    if (ufsr & SCB_CFSR_NOCP_Msk) {
+        uart_printf("No coprocessor\n");
+    }
+    if (ufsr & SCB_CFSR_DIVBYZERO_Msk) {
+        uart_printf("Division by zero\n");
+    }
+
+    while(1) { __WFI(); }
+}
+
 void BusFault_Handler(void) {
     uart_printf("\n=== BUS FAULT ===\n");
 
-    uint32_t bfsr = (SCB->CFSR >> 8) & 0xFF;
+    uint32_t bfsr = SCB->CFSR & 0xFFFFFFFF;
     uart_printf("BFSR: 0x%x\n", bfsr);
 
     if (bfsr & SCB_CFSR_BFARVALID_Msk) {
@@ -152,21 +179,16 @@ void SVC_Handler(void) {
 
     // SVC-Nummer aus der Instruktion extrahieren
     uint32_t *stack_frame = (uint32_t*)__get_PSP();
-    uart_printf("\n=== SUPERVISOR CALL ===\n");
-
     uint32_t pc = stack_frame[6];
-    uart_printf("\n=== SUPERVISOR CALL ===\n");
     uint16_t *svc_instruction = (uint16_t*)(pc - 2);
-    uart_printf("\n=== SUPERVISOR CALL ===\n");
     uint8_t svc_number = *svc_instruction & 0xFF;
-    uart_printf("\n=== SUPERVISOR CALL ===\n");
 
     //uart_printf("SVC Number: 0x%x\n", svc_number);
     //uart_printf("Called from PC: 0x%x\n", pc);
 
     // Hier könntest du verschiedene System-Services implementieren
     switch(svc_number) {
-        case 0:
+        case 42:
             uart_printf("System service 0 called\n");
             break;
         default:
