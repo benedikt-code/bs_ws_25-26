@@ -14,7 +14,6 @@ void init_stacks(void);
 
 void test_exceptions(char);
 
-void Reset_Handler(void);
 void NMI_Handler(void);
 void HardFault_Handler(void);
 void MemManage_Handler(void);

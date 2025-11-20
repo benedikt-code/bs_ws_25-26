@@ -26,9 +26,6 @@
 #include "uart.h"
 #include "exception_handlers.h"
 
-
-
-// Erweitere deine main()-Funktion:
 int main(void) {
     init_stacks(); // Stack-Initialisierung
     uart2_init(115200);

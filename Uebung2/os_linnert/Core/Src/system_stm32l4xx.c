@@ -207,11 +207,12 @@ void SystemInit(void)
 #endif
 
   // Usage/ Bus/ MemManage Faults aktivieren
-  SCB->SHCSR |= (SCB_SHCSR_USGFAULTENA_Msk |
-		  	  	 SCB_SHCSR_BUSFAULTENA_Msk |
-				 SCB_SHCSR_MEMFAULTENA_Msk);
+  // SHCSR - System Handler Control and State Register
+  // Hier kann man noch mehr Sachen "aktivieren", brauchen wir aber nicht für unsere Error Handler
+  // Masken wieder aus CMSIS
+  SCB->SHCSR |= (SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk);
 
-  // Division by Zero Trap aktivieren
+  // Division by Zero Trap aktivieren (Das ermöglicht uns einen Usage Fault Für div by 0 auszulösen, normalerweise einfach übersprungen)
   SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 }
 

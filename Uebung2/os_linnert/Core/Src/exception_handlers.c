@@ -36,17 +36,12 @@ void test_exceptions(char command) {
     	case '1':
     		uart_printf("Triggering UsageFault (division by zero)...\n");
 			{
-    		    uart_printf("\n=== SUPERVISOR CALL ===\n");
-				volatile int a = 1; // Ungültige 32-bit Instruktion
-			    uart_printf("\n=== SUPERVISOR CALL ===\n");
+				volatile int a = 1;
 				volatile int b = 0;
-			    uart_printf("\n=== SUPERVISOR CALL ===\n");
 				volatile int c = a / b;
-			    uart_printf("\n=== SUPERVISOR CALL ===\n");
-				(void)c;
-			    uart_printf("\n=== SUPERVISOR CALL ===\n");
+				// (void)c; Ich glaube das brauchen wir nicht
 			}
-        case '2': // UsageFault - Undefined Instruction
+        case '2':
             uart_printf("Triggering UsageFault (undefined instruction)...\n");
             __asm volatile(".word 0xDE00"); // Ungültige 32-bit Instruktion
             break;
@@ -71,6 +66,7 @@ void test_exceptions(char command) {
 void NMI_Handler(void) {
     uart_printf("\n=== NON-MASKABLE INTERRUPT ===\n");
     uart_printf("Critical hardware event occurred\n");
+    // WFI - WaitForInterrupt, ist nen Low Power Mode, wir könnten nen reset vom System machen über "Watchdog"?
     while(1) { __WFI(); }
 }
 
@@ -78,9 +74,16 @@ void HardFault_Handler(void) {
     uart_printf("\n=== HARD FAULT ===\n");
 
     // Fault-Status lesen
+    // SCB - System Control Block
+    // HFSR - Hard Fault Status Register
+    // (32 Bit groß,
+    // 0-29 und 31 sind reserved,
+    // 30 ist Forced also anderer Fault wurde nicht behandelt,
+    // 1 ist VECTTBL Fehler beim Vector Table Zugriff)
     uint32_t hfsr = SCB->HFSR;
     uart_printf("HFSR: 0x%x\n", hfsr);
 
+    // benutzen Masken um die HardFaults zu klassifizieren (Die sind ausm CMSIS)
     if (hfsr & SCB_HFSR_FORCED_Msk) {
         uart_printf("Forced HardFault (escalated from configurable fault)\n");
     }
@@ -88,7 +91,8 @@ void HardFault_Handler(void) {
         uart_printf("Vector table read fault\n");
     }
 
-    // Stack Frame analysieren
+    // Stack Frame analysieren (Ich habe bei den SVC sachen immer den PSP genommen, weil ich immer errors bekommen habe,
+    // aber bei dir hatten die Sachen ja funktioniert, deshalb lass ich das mal so noch. Sollten wir nochmal nachtesten !TEST?)
     uint32_t *stack_frame;
     if (__get_CONTROL() & 0x02) {
         stack_frame = (uint32_t*)__get_PSP();
@@ -100,16 +104,25 @@ void HardFault_Handler(void) {
     uart_printf("LR: 0x%x\n", stack_frame[5]);
     uart_printf("SP: 0x%p\n", stack_frame);
 
-    // System anhalten
+    // WFI - WaitForInterrupt, ist nen Low Power Mode, wir könnten nen reset vom System machen über "Watchdog"?
     while(1) { __WFI(); }
 }
 
 void MemManage_Handler(void) {
     uart_printf("\n=== MEMORY MANAGEMENT FAULT ===\n");
 
-    uint32_t mmfsr = SCB->CFSR & 0xFF;
+    // SCB - System Control Block
+    // CFSR - Configurable Fault Status Register (32 Bit groß)
+    // 0-7 MMFSR - Memory Management Fault Status Register
+    // 8-15 BFSR - Bus Fault Status Register
+    // 16-31 UFSR - Usage Fault Status Register
+    // jeder Bit steht hier für einen bestimmten Fehler
+
+    // wir nehmen immer das volle CFSR Register für die Masks (speicher sparender wäre die Masks zu shiften)
+    uint32_t mmfsr = SCB->CFSR & 0xFFFFFFFF;
     uart_printf("MMFSR: 0x%x\n", mmfsr);
 
+    // Wir benutzen Masken um manche Memory Faults zu klassifizieren (Die sind ausm CMSIS)
     if (mmfsr & SCB_CFSR_MMARVALID_Msk) {
         uart_printf("Fault Address: 0x%x\n", SCB->MMFAR);
     }
@@ -120,17 +133,26 @@ void MemManage_Handler(void) {
         uart_printf("Instruction access violation\n");
     }
 
+    // WFI - WaitForInterrupt, ist nen Low Power Mode, wir könnten nen reset vom System machen über "Watchdog"?
     while(1) { __WFI(); }
 }
 
 void UsageFault_Handler(void) {
     uart_printf("\n=== USAGE FAULT ===\n");
 
+    // SCB - System Control Block
+    // CFSR - Configurable Fault Status Register (32 Bit groß)
+    // 0-7 MMFSR - Memory Management Fault Status Register
+    // 8-15 BFSR - Bus Fault Status Register
+    // 16-31 UFSR - Usage Fault Status Register
+    // jeder Bit steht hier für einen bestimmten Fehler
+
+    // wir nehmen immer das volle CFSR Register für die Masks (speicher sparender wäre die Masks zu shiften)
     uint32_t ufsr = (SCB->CFSR) & 0xFFFFFFFF;
 
     uart_printf("UFSR: 0x%x\n", ufsr);
 
-
+    // Wir benutzen Masken um Usage Faults zu klassifizieren (Die sind ausm CMSIS)
     if (ufsr & SCB_CFSR_UNDEFINSTR_Msk) {
         uart_printf("Undefined instruction\n");
     }
@@ -147,15 +169,26 @@ void UsageFault_Handler(void) {
         uart_printf("Division by zero\n");
     }
 
+    // WFI - WaitForInterrupt, ist nen Low Power Mode, wir könnten nen reset vom System machen über "Watchdog"?
     while(1) { __WFI(); }
 }
 
 void BusFault_Handler(void) {
     uart_printf("\n=== BUS FAULT ===\n");
 
+    // SCB - System Control Block
+    // CFSR - Configurable Fault Status Register (32 Bit groß)
+    // 0-7 MMFSR - Memory Management Fault Status Register
+    // 8-15 BFSR - Bus Fault Status Register
+    // 16-31 UFSR - Usage Fault Status Register
+    // jeder Bit steht hier für einen bestimmten Fehler
+
+    // wir nehmen immer das volle CFSR Register für die Masks (speicher sparender wäre die Masks zu shiften)
+
     uint32_t bfsr = SCB->CFSR & 0xFFFFFFFF;
     uart_printf("BFSR: 0x%x\n", bfsr);
 
+    // Wir benutzen Masken um Bus Faults zu klassifizieren (Die sind ausm CMSIS)
     if (bfsr & SCB_CFSR_BFARVALID_Msk) {
         uart_printf("Fault Address: 0x%x\n", SCB->BFAR);
     }
@@ -169,6 +202,7 @@ void BusFault_Handler(void) {
         uart_printf("Instruction bus error\n");
     }
 
+    // WFI - WaitForInterrupt, ist nen Low Power Mode, wir könnten nen reset vom System machen über "Watchdog"?
     while(1) { __WFI(); }
 }
 
@@ -178,21 +212,25 @@ void SVC_Handler(void) {
     uart_printf("\n=== SUPERVISOR CALL ===\n");
 
     // SVC-Nummer aus der Instruktion extrahieren
+    // Hier ist das Gegenstück zum HardFault_Handler !TEST?
     uint32_t *stack_frame = (uint32_t*)__get_PSP();
     uint32_t pc = stack_frame[6];
     uint16_t *svc_instruction = (uint16_t*)(pc - 2);
     uint8_t svc_number = *svc_instruction & 0xFF;
 
+    // Ich lass das hier mal noch auskommentiert, weil es so war aber ich glaube die waren auch nur bei mir direkt problematisch !TEST?
     //uart_printf("SVC Number: 0x%x\n", svc_number);
     //uart_printf("Called from PC: 0x%x\n", pc);
 
-    // Hier könntest du verschiedene System-Services implementieren
+    // implementation für SVCs mit einem Beispiel
     switch(svc_number) {
         case 42:
-            uart_printf("System service 0 called\n");
+            uart_printf("SVC 42 called\n");
             break;
         default:
-            uart_printf("Unknown system service\n");
+            uart_printf("Unknown SVC\n");
             break;
     }
+
+    // wir brauchen keine endlosschleife weil es nur sagt, wir machen hier nen supervisor call
 }
