@@ -1,10 +1,3 @@
-/*
- * exception_handlers.c
- *
- *  Created on: Nov 19, 2025
- *      Author: andre
- */
-
 #include "exception_handlers.h"
 #include "stm32l4xx.h"
 #include "uart.h"
@@ -14,21 +7,68 @@
 #define PSP_STACK_SIZE  0x800   // 2KB für Anwendung
 
 // Stack-Bereiche im RAM definieren (statisch allokiert)
+// Startadresse muss durch 8 teilbar sein (ARM-Anforderung)
 static uint8_t msp_stack[MSP_STACK_SIZE] __attribute__((aligned(8)));
 static uint8_t psp_stack[PSP_STACK_SIZE] __attribute__((aligned(8)));
+
+/*
+Allgemeines Layout (fully descending)
+RAM Layout (256 KB von 0x20000000 bis 0x20040000):
+MSP ganz oben (Ende des RAMs), danach PSP
+HOHE Adressen (Ende des RAMs)
+↑
+│  0x20040000 ← _estack (Stack Pointer zeigt HIERHIN beim Start)
+│              ← SP = 0x20040000
+│  0x2003FFFC │  [LEER - hier wird als ERSTES geschrieben]
+│  0x2003FFF8 │  [LEER]
+│  0x2003FFF4 │  [LEER]
+│  0x2003FFF0 │  [LEER]
+│     ...     │  [LEER - Stack wächst nach UNTEN]
+│     ...     │
+│  0x20000100 │  [Daten/Code/Heap]
+│  0x20000000 │  [Beginn RAM]
+↓
+NIEDRIGE Adressen (Start des RAMs)
+
+*/
+
+
+/*
+Unser Fall mit MPS und PSP Stacks:
+0x2000XXXX ← msp_stack[0] (Beginn MSP-Array)
+    │
+    │  [4096 Bytes MSP Stack Space]
+    │
+0x2000YYYY ← msp_stack[4096] (Ende MSP-Array) <-- MSP zeigt hierhin
+    │
+0x2000ZZZZ ← psp_stack[0] (Beginn PSP-Array)
+    │
+    │  [2048 Bytes PSP Stack Space]
+    │
+0x2000WWWW ← psp_stack[2048] (Ende PSP-Array) <-- PSP zeigt hierhin
+
+*/
 
 void init_stacks(void) {
     // MSP auf Ende des MSP-Stack-Bereichs setzen
     uint32_t msp_top = (uint32_t)&msp_stack[MSP_STACK_SIZE];
+    // CMSIS-Funktion zum Setzen des MSP
     __set_MSP(msp_top);
 
     // PSP auf Ende des PSP-Stack-Bereichs setzen
     uint32_t psp_top = (uint32_t)&psp_stack[PSP_STACK_SIZE];
+    // CMSIS-Funktion zum Setzen des PSP
     __set_PSP(psp_top);
 
     // CONTROL Register setzen: PSP für Thread Mode verwenden
-    __set_CONTROL(__get_CONTROL() | 0x02);  // SPSEL = 1 (PSP aktiv)
-    __ISB(); // Instruction Synchronization Barrier
+    // 3 relevante Bits: Bit 0: nPRIV (0=privileged, 1=unprivileged), Bit 1: SPSEL (0=MSP, 1=PSP), 
+    // Bit 2: FPCA (Floating Point Context Active)
+    // SPSEL = 1 (PSP aktiv)
+    __set_CONTROL(__get_CONTROL() | 0x02);  
+
+    // Instruction Synchronization Barrier einfügen, um sicherzustellen, dass die Änderung wirksam wird
+    // Cache leeren/invalidieren, damit garantiert wird, dass die nächsten Instruktionen mit dem neuen Stack ausgeführt werden
+    __ISB(); 
 }
 
 void test_exceptions(char command) {
