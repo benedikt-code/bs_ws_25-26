@@ -1,6 +1,19 @@
 #include "exception_handlers.h"
 #include "stm32l4xx.h"
+#include "system_stm32l4xx.h"
+#include "stm32l496xx.h"
 #include "uart.h"
+#include <stdint.h>
+
+// Tick-Frequenz (IRQ-Frequenz)
+#define SYSTICK_HZ 1000u
+
+// wie oft pro Sekunde "!" (5 Hz => alle 200ms)
+#define TIMER_EVENT_HZ 5u
+
+//extern volatile uint32_t g_ticks;
+//extern volatile uint8_t  g_timer_event;
+
 
 // Stack-Größen definieren
 #define MSP_STACK_SIZE  0x1000  // 4KB für System/Handler
@@ -48,6 +61,17 @@ Unser Fall mit MPS und PSP Stacks:
 0x2000WWWW ← psp_stack[2048] (Ende PSP-Array) <-- PSP zeigt hierhin
 
 */
+
+static inline void systick_init(void) {
+    uint32_t reload = (SystemCoreClock / SYSTICK_HZ) - 1u;
+    SysTick->LOAD = reload;
+    SysTick->VAL  = 0;
+    NVIC_SetPriority(SysTick_IRQn, 15); // eher niedrig
+    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
+                    SysTick_CTRL_TICKINT_Msk   |
+                    SysTick_CTRL_ENABLE_Msk;
+}
+
 
 void init_stacks(void) {
     // MSP auf Ende des MSP-Stack-Bereichs setzen

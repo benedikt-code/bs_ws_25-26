@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "exception_handlers.h": "c",
+        "stm32l4xx.h": "c",
+        "system_stm32l4xx.h": "c"
+    }
+}
