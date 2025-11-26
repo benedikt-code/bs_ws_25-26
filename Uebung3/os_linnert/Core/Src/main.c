@@ -22,15 +22,57 @@
 #include "uart.h"
 #include "exception_handlers.h"
 
+
+#define REPEAT_COUNT  30u
+#define PAUSE_MS      50u
+
+volatile uint32_t g_ticks = 0;
+volatile uint8_t  g_timer_event = 0;
+
+static inline void os_poll(void){
+    if (g_timer_event) {
+        g_timer_event = 0;
+        uart_printf("!\n");
+    }
+}
+
+
+static void delay_ms(uint32_t ms) {
+    uint32_t start = g_ticks;
+    uint32_t ticks = (SYSTICK_HZ * ms) / 1000u;
+    if (ticks == 0) ticks = 1;
+    while ((uint32_t)(g_ticks - start) < ticks) {
+        os_poll();
+        __WFI();
+    }
+}
+
+
+
 int main(void) {
-    init_stacks(); // Stack-Initialisierung
-    uart2_init(115200);
-    uart_printf("Exception Handler Test ready.\n");
-    uart_printf("Commands: 1=UsageFault(div0), 2=UsageFault(undIns), 3=BusFault, 4=SVC\n");
+    init_stacks();          // hast du schon :contentReference[oaicite:4]{index=4}
+    uart2_init(115200);     // hast du schon :contentReference[oaicite:5]{index=5}
+    systick_init();
+    uart2_enable_rx_irq();
+    __enable_irq();
+
+    uart_printf("Ready. Press a key...\n");
 
     for (;;) {
-        int c = uart2_getc_blocking();
-        uart_printf("Command: '%c'\n", c);
-        test_exceptions((char)c);
+        // Warten auf Taste (IRQ-getrieben)
+        uart_printf("Key? ");
+        int c;
+        while ((c = uart2_getc_nonblocking()) < 0) {
+            os_poll();
+            __WFI();
+        }
+        uart_printf("\nGot '%c'\n", c);
+
+        // "Berechnung": Zeichen mehrfach ausgeben mit Pausen
+        for (unsigned i = 0; i < REPEAT_COUNT; i++) {
+            uart2_putc((char)c);
+            delay_ms(PAUSE_MS);
+        }
+        uart_printf("\n");
     }
 }

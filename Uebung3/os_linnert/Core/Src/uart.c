@@ -5,6 +5,14 @@
 #define PCLK1_HZ 4000000u  // MSI ~4 MHz at reset
 #endif
 
+// Buffer
+#define UART2_RX_BUF_SIZE 64
+
+static volatile uint8_t  rx_buf[UART2_RX_BUF_SIZE];
+static volatile uint16_t rx_head = 0;
+static volatile uint16_t rx_tail = 0;
+static volatile uint8_t  rx_overflow = 0;
+
 static inline void gpio_af7_usart2_pa2_pd6(void) {
 	//Bus AHB2ENR Zugriff - Ports A und D "freischalten"(für Pin A2, D6)
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIODEN;
@@ -108,6 +116,21 @@ void uart2_init(uint32_t baud) {
 	// Acknowledge-Bits abwarten (HW wirklich bereit)
 	while ((USART2->ISR & USART_ISR_TEACK) == 0) { /* warten */ }
 	while ((USART2->ISR & USART_ISR_REACK) == 0) { /* warten */ }
+
+
+	// clear possible pending error flags
+	USART2->ICR = USART_ICR_ORECF | USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
+
+	// enable USART RX interrupt (RX not empty)
+	USART2->CR1 |= USART_CR1_RXNEIE;
+
+	// optional: enable error interrupts
+	USART2->CR3 |= USART_CR3_EIE;
+
+	// enable NVIC line for USART2
+	NVIC_ClearPendingIRQ(USART2_IRQn);
+	NVIC_SetPriority(USART2_IRQn, 5);
+	NVIC_EnableIRQ(USART2_IRQn);
 }
 
 // Sendet 1 Zeichen (char c)
@@ -137,3 +160,24 @@ int uart2_getc_blocking(void) {
 
     return (int)(USART2->RDR & 0xFF);
 }
+
+int uart2_getc_nonblocking(void) {
+    int ret = -1;
+    __disable_irq();
+    if (rx_head != rx_tail) {
+        ret = rx_buf[rx_tail];
+        rx_tail = (uint16_t)((rx_tail + 1u) % UART2_RX_BUF_SIZE);
+    }
+    __enable_irq();
+    return ret;
+}
+
+void uart2_enable_rx_irq(void) {
+    // evtl. alte Fehlerflags löschen (optional, aber “sauber”)
+    USART2->ICR = USART_ICR_ORECF | USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
+
+    USART2->CR1 |= USART_CR1_RXNEIE;      // RX Interrupt an
+    NVIC_SetPriority(USART2_IRQn, 5);     // höher als SysTick
+    NVIC_EnableIRQ(USART2_IRQn);
+}
+

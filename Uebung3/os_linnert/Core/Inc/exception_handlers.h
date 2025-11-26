@@ -8,7 +8,12 @@
 #ifndef INC_EXCEPTION_HANDLERS_H_
 #define INC_EXCEPTION_HANDLERS_H_
 
+// Tick-Frequenz (IRQ-Frequenz)
+#define SYSTICK_HZ 1000u
+
 #include <stdint.h>
+
+void systick_init(void);
 
 void init_stacks(void);
 
@@ -20,5 +25,6 @@ void MemManage_Handler(void);
 void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void SVC_Handler(void);
+void USART2_IRQHandler(void);
 
 #endif /* INC_EXCEPTION_HANDLERS_H_ */

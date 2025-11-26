@@ -3,16 +3,20 @@
 #include "system_stm32l4xx.h"
 #include "stm32l496xx.h"
 #include "uart.h"
-#include <stdint.h>
 
-// Tick-Frequenz (IRQ-Frequenz)
-#define SYSTICK_HZ 1000u
+extern volatile uint32_t g_ticks;
+extern volatile uint8_t  g_timer_event;
+volatile uint32_t g_systick_events = 0;
+
 
 // wie oft pro Sekunde "!" (5 Hz => alle 200ms)
 #define TIMER_EVENT_HZ 5u
 
-//extern volatile uint32_t g_ticks;
-//extern volatile uint8_t  g_timer_event;
+// Buffer
+#define RX_BUF_SZ 64u
+static volatile uint8_t  rx_buf[RX_BUF_SZ];
+static volatile uint16_t rx_head = 0, rx_tail = 0;
+static volatile uint8_t  rx_overflow = 0;
 
 
 // Stack-Größen definieren
@@ -62,10 +66,10 @@ Unser Fall mit MPS und PSP Stacks:
 
 */
 
-static inline void systick_init(void) {
+void systick_init(void) {
     uint32_t reload = (SystemCoreClock / SYSTICK_HZ) - 1u;
     SysTick->LOAD = reload;
-    SysTick->VAL  = 0;
+    SysTick->VAL  = 0u;
     NVIC_SetPriority(SysTick_IRQn, 15); // eher niedrig
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
                     SysTick_CTRL_TICKINT_Msk   |
@@ -297,4 +301,32 @@ void SVC_Handler(void) {
     }
 
     // wir brauchen keine endlosschleife weil es nur sagt, wir machen hier nen supervisor call
+}
+
+
+void USART2_IRQHandler(void) {
+    uint32_t isr = USART2->ISR;
+
+    if (isr & USART_ISR_RXNE) {
+        uint8_t b = (uint8_t)USART2->RDR;    // reading clears RXNE
+        uint16_t next = (uint16_t)((rx_head + 1u) % RX_BUF_SZ);
+
+        if (next != rx_tail) {
+            rx_buf[rx_head] = b;
+            rx_head = next;
+        } else {
+            rx_overflow = 1; // buffer full: drop newest (your policy)
+        }
+    }
+
+    if (isr & USART_ISR_ORE) {
+        USART2->ICR = USART_ICR_ORECF;       // acknowledge overrun
+    }
+    if (isr & (USART_ISR_FE | USART_ISR_NE | USART_ISR_PE)) {
+        USART2->ICR = USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
+    }
+}
+
+void SysTick_Handler(void) {
+    g_systick_events++;   // keep ISR tiny; print later in main
 }
