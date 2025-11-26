@@ -6,7 +6,7 @@
 #endif
 
 // Buffer
-#define UART2_RX_BUF_SIZE 64
+#define UART2_RX_BUF_SIZE 64u
 
 static volatile uint8_t  rx_buf[UART2_RX_BUF_SIZE];
 static volatile uint16_t rx_head = 0;
@@ -181,3 +181,25 @@ void uart2_enable_rx_irq(void) {
     NVIC_EnableIRQ(USART2_IRQn);
 }
 
+void USART2_IRQHandler(void) {
+    uint32_t isr = USART2->ISR;
+
+    if (isr & USART_ISR_RXNE) {
+        uint8_t b = (uint8_t)USART2->RDR;    // reading clears RXNE
+        uint16_t next = (uint16_t)((rx_head + 1u) % UART2_RX_BUF_SIZE);
+
+        if (next != rx_tail) {
+            rx_buf[rx_head] = b;
+            rx_head = next;
+        } else {
+            rx_overflow = 1; // buffer full: drop newest (your policy)
+        }
+    }
+
+    if (isr & USART_ISR_ORE) {
+        USART2->ICR = USART_ICR_ORECF;       // acknowledge overrun
+    }
+    if (isr & (USART_ISR_FE | USART_ISR_NE | USART_ISR_PE)) {
+        USART2->ICR = USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
+    }
+}

@@ -10,14 +10,7 @@ volatile uint32_t g_systick_events = 0;
 
 
 // wie oft pro Sekunde "!" (5 Hz => alle 200ms)
-#define TIMER_EVENT_HZ 5u
-
-// Buffer
-#define RX_BUF_SZ 64u
-static volatile uint8_t  rx_buf[RX_BUF_SZ];
-static volatile uint16_t rx_head = 0, rx_tail = 0;
-static volatile uint8_t  rx_overflow = 0;
-
+#define TIMER_EVENT_HZ 8u
 
 // Stack-Größen definieren
 #define MSP_STACK_SIZE  0x1000  // 4KB für System/Handler
@@ -303,30 +296,12 @@ void SVC_Handler(void) {
     // wir brauchen keine endlosschleife weil es nur sagt, wir machen hier nen supervisor call
 }
 
-
-void USART2_IRQHandler(void) {
-    uint32_t isr = USART2->ISR;
-
-    if (isr & USART_ISR_RXNE) {
-        uint8_t b = (uint8_t)USART2->RDR;    // reading clears RXNE
-        uint16_t next = (uint16_t)((rx_head + 1u) % RX_BUF_SZ);
-
-        if (next != rx_tail) {
-            rx_buf[rx_head] = b;
-            rx_head = next;
-        } else {
-            rx_overflow = 1; // buffer full: drop newest (your policy)
-        }
-    }
-
-    if (isr & USART_ISR_ORE) {
-        USART2->ICR = USART_ICR_ORECF;       // acknowledge overrun
-    }
-    if (isr & (USART_ISR_FE | USART_ISR_NE | USART_ISR_PE)) {
-        USART2->ICR = USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
-    }
-}
-
 void SysTick_Handler(void) {
-    g_systick_events++;   // keep ISR tiny; print later in main
+    g_ticks++;   // keep ISR tiny; print later in main
+    
+    static uint32_t div = 0;
+    if (++div >= (SYSTICK_HZ / TIMER_EVENT_HZ)) {
+        div = 0;
+        g_timer_event = 1;   // nur Flag setzen (ISR kurz halten)
+    }
 }

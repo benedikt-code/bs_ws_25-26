@@ -27,7 +27,7 @@
 #define PAUSE_MS      50u
 
 volatile uint32_t g_ticks = 0;
-volatile uint8_t  g_timer_event = 0;
+volatile uint8_t g_timer_event = 0;
 
 static inline void os_poll(void){
     if (g_timer_event) {
@@ -60,13 +60,11 @@ int main(void) {
 
     for (;;) {
         // Warten auf Taste (IRQ-getrieben)
-        uart_printf("Key? ");
         int c;
         while ((c = uart2_getc_nonblocking()) < 0) {
             os_poll();
             __WFI();
         }
-        uart_printf("\nGot '%c'\n", c);
 
         // "Berechnung": Zeichen mehrfach ausgeben mit Pausen
         for (unsigned i = 0; i < REPEAT_COUNT; i++) {

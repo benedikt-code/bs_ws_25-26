@@ -25,6 +25,6 @@ void MemManage_Handler(void);
 void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void SVC_Handler(void);
-void USART2_IRQHandler(void);
+void SysTick_Handler(void);
 
 #endif /* INC_EXCEPTION_HANDLERS_H_ */
