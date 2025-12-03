@@ -5,12 +5,16 @@
 #define PCLK1_HZ 4000000u  // MSI ~4 MHz at reset
 #endif
 
-// Buffer
+// Größe des Buffer für Zwischenspeicherung von eingehenden Bytes (8 Zeichen werden gespeichert)
 #define UART2_RX_BUF_SIZE 64u
 
-static volatile uint8_t  rx_buf[UART2_RX_BUF_SIZE];
+// Array zur Zwischenspeicherung unserer daten
+static volatile uint8_t rx_buf[UART2_RX_BUF_SIZE];
+// Stelle des nächsten Schreibvorgangs vom Interrupt
 static volatile uint16_t rx_head = 0;
+// Stelle wo Main liest
 static volatile uint16_t rx_tail = 0;
+// overflow zeigt wenn Buffer voll ist
 static volatile uint8_t  rx_overflow = 0;
 
 static inline void gpio_af7_usart2_pa2_pd6(void) {
@@ -162,43 +166,67 @@ int uart2_getc_blocking(void) {
 }
 
 int uart2_getc_nonblocking(void) {
+    // default
     int ret = -1;
+    // interrupts disablen, ringbuffer soll nicht gleichzeitig verändert werden
     __disable_irq();
+    // Wenn buffer nicht leer
     if (rx_head != rx_tail) {
+        // Byte lesen
         ret = rx_buf[rx_tail];
+        // tail weiterschieben
         rx_tail = (uint16_t)((rx_tail + 1u) % UART2_RX_BUF_SIZE);
     }
+    // interrupts anmachen
     __enable_irq();
     return ret;
 }
 
 void uart2_enable_rx_irq(void) {
-    // evtl. alte Fehlerflags löschen (optional, aber “sauber”)
+    // alte Fehlerflags löschen
+    // ORECF - Overrun Error Clear Flag
+    // FECF - Framing Error Clear Flag
+    // NECF - Noise Error Clear Flag
+    // PECF - Parity Error Clear Flag
     USART2->ICR = USART_ICR_ORECF | USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
 
-    USART2->CR1 |= USART_CR1_RXNEIE;      // RX Interrupt an
-    NVIC_SetPriority(USART2_IRQn, 5);     // höher als SysTick
+    // RXNEIE - RX not empty Interrupt enable, uart löst interrupt aus wenn byte empfangen wird
+    USART2->CR1 |= USART_CR1_RXNEIE;
+    // NVIC - Nested Vector Interrupt Controller, setzen interrupt Prio von USART2 auf 5 (je niedriger desto höher die prio)
+    // SysTick hat prio 6 also reagiert UART schneller auf die Bytes
+    NVIC_SetPriority(USART2_IRQn, 5);
+    // aktiviert USART2-Interrupt im NVIC
     NVIC_EnableIRQ(USART2_IRQn);
 }
 
 void USART2_IRQHandler(void) {
+    // ISR - Interrupt state register, zeigt warum interrupt ausgelöst wurde
     uint32_t isr = USART2->ISR;
 
+    // USART_ISR_RXNE - Flag ob das Recieve Register not empty ist
     if (isr & USART_ISR_RXNE) {
-        uint8_t b = (uint8_t)USART2->RDR;    // reading clears RXNE
+        // lesen des Bytes
+        uint8_t b = (uint8_t)USART2->RDR;    // reading cleart RXNE
+        // bestimmt nächste Position über Modulo (16 bit damit wir über 8 gehen können und modulo regelt)
         uint16_t next = (uint16_t)((rx_head + 1u) % UART2_RX_BUF_SIZE);
 
+        // wenn next == rx_tail wäre unser ringbuffer voll, wir würden überschreiben wo das Programm lesen soll
         if (next != rx_tail) {
+            // schreibe b an stelle rx_head und verschiebe auf neue position
             rx_buf[rx_head] = b;
             rx_head = next;
         } else {
-            rx_overflow = 1; // buffer full: drop newest (your policy)
+            // aktuell nur zur Fehlererkennung
+            rx_overflow = 1; // buffer voll: drop b
         }
     }
 
+    // Flag Overrun Error, neues Byte kam aber altes wurde nicht weitergegeben, empfangsregister überschrieben
+    // fehlerflag löschen, damit USART weiterarbeiten kann
     if (isr & USART_ISR_ORE) {
-        USART2->ICR = USART_ICR_ORECF;       // acknowledge overrun
+        USART2->ICR = USART_ICR_ORECF;
     }
+
     if (isr & (USART_ISR_FE | USART_ISR_NE | USART_ISR_PE)) {
         USART2->ICR = USART_ICR_FECF | USART_ICR_NECF | USART_ICR_PECF;
     }

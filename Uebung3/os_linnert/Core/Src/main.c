@@ -29,6 +29,7 @@
 volatile uint32_t g_ticks = 0;
 volatile uint8_t g_timer_event = 0;
 
+// Timer-interrupt festgestellt print
 static inline void os_poll(void){
     if (g_timer_event) {
         g_timer_event = 0;
@@ -40,7 +41,7 @@ static inline void os_poll(void){
 static void delay_ms(uint32_t ms) {
     uint32_t start = g_ticks;
     uint32_t ticks = (SYSTICK_HZ * ms) / 1000u;
-    if (ticks == 0) ticks = 1;
+    if (ticks == 0) ticks = 1; // abfangen für sehr kleine ms
     while ((uint32_t)(g_ticks - start) < ticks) {
         os_poll();
         __WFI();
