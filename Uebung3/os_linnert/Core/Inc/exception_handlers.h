@@ -9,6 +9,7 @@
 #define INC_EXCEPTION_HANDLERS_H_
 
 // Tick-Frequenz (IRQ-Frequenz)
+// Alle 1ms einmal SysTick-Interrupt
 #define SYSTICK_HZ 1000u
 
 #include <stdint.h>

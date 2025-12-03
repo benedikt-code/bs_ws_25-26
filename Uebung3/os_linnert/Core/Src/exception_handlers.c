@@ -4,12 +4,14 @@
 #include "stm32l496xx.h"
 #include "uart.h"
 
+// Timer-Variablen (definiert in main.c)
+// Systemzeit in Ticks
 extern volatile uint32_t g_ticks;
+// Flag für periodische Events
 extern volatile uint8_t  g_timer_event;
-volatile uint32_t g_systick_events = 0;
 
-
-// wie oft pro Sekunde "!" (5 Hz => alle 200ms)
+// Frequenz der "!"-Ausgabe
+// 8x pro Sekunde = alle 125ms
 #define TIMER_EVENT_HZ 8u
 
 // Stack-Größen definieren
@@ -59,16 +61,32 @@ Unser Fall mit MPS und PSP Stacks:
 
 */
 
+// 24-Bit Countdown-Timer im Cortex-M4, löst bei 0 einen Interrupt aus und lädt automatisch neu
 void systick_init(void) {
+    // Reload-Wert berechnen: Timer zählt (reload+1) Takte bis zum Interrupt
+    // Bei 4MHz Tacktung und SYSTICK_HZ=1000 (Interrupt-Interval): 4.000.000/1000 - 1 = 3999 
+    // --> Interrupt alle 1ms mit reload=3999
+
+    // SystemCoreClock global aus CMSIS
     uint32_t reload = (SystemCoreClock / SYSTICK_HZ) - 1u;
+    
+    // 1. Timer aufsetzen --> 2. Dann Timer auslösen
+    // Startwert für Countdown (24-Bit, max 0xFFFFFF), wird automatisch bei 0 neu geladen
     SysTick->LOAD = reload;
+    // Val speichert aktuellen Zählerstand (Reihenfolge: Reload, reload-1, ..., 1, 0)
+    // Zähler zurücksetzen und (Countflag in CTRL wird gelöscht)
     SysTick->VAL  = 0u;
-    NVIC_SetPriority(SysTick_IRQn, 15); // eher niedrig
+    
+    // Nested Vectored Interrupt Controller (NVIC) 
+    // Niedrigste Priorität (15), damit UART-IRQ Vorrang hat (Cortex-M4 4bits für Prio)
+    NVIC_SetPriority(SysTick_IRQn, 15);
+    
+    // Timer aktivieren: Bits 2-0 werden gesetzt: CLKSOURCE: | Tickint: Interrupt-Request an NVIC bei 0 | Enable (Timer aktiv)
+    // Control and Status Register
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |
                     SysTick_CTRL_TICKINT_Msk   |
                     SysTick_CTRL_ENABLE_Msk;
 }
-
 
 void init_stacks(void) {
     // MSP auf Ende des MSP-Stack-Bereichs setzen
@@ -296,12 +314,23 @@ void SVC_Handler(void) {
     // wir brauchen keine endlosschleife weil es nur sagt, wir machen hier nen supervisor call
 }
 
+// SysTick ISR
+// Wird bei jedem Timer-underflow aufgerufen. ISR kurz halten --> nur Flags setzen
 void SysTick_Handler(void) {
-    g_ticks++;   // keep ISR tiny; print later in main
+    // Systemzeit erhöhen (für delay_ms) (4Mhz gtickes in 1 Sekunde)
+    // nach 17,8833 Minuten überläuft der 32-Bit Zähler (2^32 / 4.000.000)
+    g_ticks++;
     
+    // Frequenzteiler für Timer-Events
+    // static, damit der Wert zwischen den Aufrufen erhalten bleibt (Initialisierung nur einmal bei Programmstart)
     static uint32_t div = 0;
+    // Alle (SYSTICK_HZ / TIMER_EVENT_HZ) Aufrufe ein Timer-Event auslösen
+    // --> bei 1000Hz / 8Hz = alle 125 Aufrufe (also alle 125ms)
     if (++div >= (SYSTICK_HZ / TIMER_EVENT_HZ)) {
         div = 0;
-        g_timer_event = 1;   // nur Flag setzen (ISR kurz halten)
+
+        // Flag setzen (wird in os_poll in main.c ausgewertet)
+        // Main-Loop gibt "!" aus (nicht hier, wegen Laufzeit)
+        g_timer_event = 1;
     }
 }
