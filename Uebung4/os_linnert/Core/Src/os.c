@@ -4,18 +4,21 @@
 
 typedef enum { THREAD_FREE = 0, THREAD_READY, THREAD_RUNNING, THREAD_DEAD } thread_state_t;
 
-static uint32_t *sp_table[OS_MAX_THREADS];
-static thread_state_t state_table[OS_MAX_THREADS];
-static uint32_t stacks[OS_MAX_THREADS][OS_STACK_WORDS];
-static int current = -1;
-static int thread_count = 0;
+static uint32_t *sp_table[OS_MAX_THREADS];      // Stack pointers for each thread
+static thread_state_t state_table[OS_MAX_THREADS];      // State of each thread (Free, Ready, Running, Dead)
+static uint32_t stacks[OS_MAX_THREADS][OS_STACK_WORDS]; // Stacks for each thread
+static int current = -1;        // Index of current running thread, -1 if none
+static int thread_count = 0;    // #Threads
 
-static const uint32_t initial_xpsr = 0x01000000U;
+// Default xPSR value with Thumb bit set
+// Hier stehen APSR (condition flags), EPSR (execution state), IPSR (exception number) drinne
+static const uint32_t initial_xpsr = 0x01000000U; 
 
+// OS Grundstrukturen initialisieren
 void os_init(void) {
     for (int i = 0; i < OS_MAX_THREADS; i++) {
-        sp_table[i] = NULL;
-        state_table[i] = THREAD_FREE;
+        sp_table[i] = NULL;     // alle stack pointer auf NULL setzen
+        state_table[i] = THREAD_FREE;     // alle threads auf FREE setzen
     }
 }
 
@@ -37,21 +40,24 @@ static void prepare_stack(int id, thread_fn_t fn, void *arg) {
     sp_table[id] = sp;
 }
 
+// Neuen Thread erstellen (nicht ISR - Interrupt Service Routine)
 int os_thread_create(thread_fn_t fn, void *arg) {
     __disable_irq();
+    // wir gehen alle state_table durch und suchen freien slot
     for (int i = 0; i < OS_MAX_THREADS; i++) {
         if (state_table[i] == THREAD_FREE) {
             prepare_stack(i, fn, arg);
             state_table[i] = THREAD_READY;
             thread_count++;
             __enable_irq();
-            return i;
+            return i; // return thread id und gehen damit aus for-Schleife
         }
     }
     __enable_irq();
-    return -1;
+    return -1; // kein freier slot gefunden
 }
 
+// Neuen Thread erstellen aus ISR Kontext
 int os_thread_create_from_isr(thread_fn_t fn, void *arg) {
     for (int i = 0; i < OS_MAX_THREADS; i++) {
         if (state_table[i] == THREAD_FREE) {
@@ -73,6 +79,17 @@ int pick_next(void) {
         if (state_table[idx] == THREAD_READY) return idx;
     }
     return -1;
+}
+
+// expose current for assembly via function
+int os_get_current(void) {
+    return current;
+}
+
+// store given sp for index
+void os_store_sp(int idx, uint32_t *sp) {
+    if (idx < 0 || idx >= OS_MAX_THREADS) return;
+    sp_table[idx] = sp;
 }
 
 void os_yield(void) {
