@@ -1,5 +1,6 @@
 #include "stm32l4xx.h"
 #include <stdint.h>
+#include "os.h"
 
 #ifndef PCLK1_HZ
 #define PCLK1_HZ 4000000u  // MSI ~4 MHz at reset
@@ -215,6 +216,9 @@ void USART2_IRQHandler(void) {
             // schreibe b an stelle rx_head und verschiebe auf neue position
             rx_buf[rx_head] = b;
             rx_head = next;
+            // zusätzlich: erzeugen eines Threads direkt aus IRQ (Demonstration)
+            // ignorieren von Fehlern (wenn keine TCB frei ist)
+            (void)os_thread_create_from_isr(thread_echo_worker, (void*)(uintptr_t)b);
         } else {
             // aktuell nur zur Fehlererkennung
             rx_overflow = 1; // buffer voll: drop b

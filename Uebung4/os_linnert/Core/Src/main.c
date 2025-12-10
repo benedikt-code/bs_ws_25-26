@@ -21,6 +21,7 @@
 #include "stm32l4xx.h"
 #include "uart.h"
 #include "exception_handlers.h"
+#include "os.h"
 
 
 #define REPEAT_COUNT  30u
@@ -59,19 +60,11 @@ int main(void) {
 
     uart_printf("Ready. Press a key...\n");
 
-    for (;;) {
-        // Warten auf Taste (IRQ-getrieben)
-        int c;
-        while ((c = uart2_getc_nonblocking()) < 0) {
-            os_poll();
-            __WFI();
-        }
+    // OS initialisieren und Scheduler starten. Threads werden
+    // aus dem UART-IRQ erzeugt (siehe uart.c).
+    os_init();
+    os_start();
 
-        // "Berechnung": Zeichen mehrfach ausgeben mit Pausen
-        for (unsigned i = 0; i < REPEAT_COUNT; i++) {
-            uart2_putc((char)c);
-            delay_ms(PAUSE_MS);
-        }
-        uart_printf("\n");
-    }
+    // os_start sollte nicht zurückkehren
+    for(;;) __WFI();
 }

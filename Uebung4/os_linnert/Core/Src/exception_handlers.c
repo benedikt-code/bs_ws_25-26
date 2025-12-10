@@ -297,11 +297,17 @@ void SVC_Handler(void) {
 }
 
 void SysTick_Handler(void) {
-    g_ticks++;   // keep ISR tiny; print later in main
-    
+    g_ticks++;   // keep ISR tiny
+
+    // direkt ein Ausrufezeichen bei jedem Timer-Interrupt ausgeben (Aufgabe verlangt dies)
+    uart2_putc('!');
+
+    // trigger PendSV zum Anstoßen des Kontextwechsels
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+
     static uint32_t div = 0;
     if (++div >= (SYSTICK_HZ / TIMER_EVENT_HZ)) {
         div = 0;
-        g_timer_event = 1;   // nur Flag setzen (ISR kurz halten)
+        g_timer_event = 0;   // keep legacy flag but we printed '!' already
     }
 }
