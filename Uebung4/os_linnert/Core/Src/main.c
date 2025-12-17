@@ -15,56 +15,56 @@
  *
  ******************************************************************************
  */
-
 #include <stdint.h>
-
 #include "stm32l4xx.h"
+
 #include "uart.h"
-#include "exception_handlers.h"
 #include "os.h"
+#include "exception_handlers.h"
 
+#define REPEAT_BURSTS   40u     // how many bursts total (thread ends afterwards)
+#define BURST_LEN       1u      // how many letters printed back-to-back per burst
+#define PAUSE_LOOPS     2000u   // small pause between bursts (TUNE THIS)
 
-#define REPEAT_COUNT  30u
-#define PAUSE_MS      50u
-
-volatile uint32_t g_ticks = 0;
-volatile uint8_t g_timer_event = 0;
-
-// Timer-interrupt festgestellt print
-static inline void os_poll(void){
-    if (g_timer_event) {
-        g_timer_event = 0;
-        uart_printf("!\n");
+static inline void busy_pause(unsigned loops) {
+    for (volatile unsigned i = 0; i < loops; i++) {
+        __NOP();
     }
 }
 
+static void worker_thread(void *arg) {
+    char c = (char)(uintptr_t)arg;
 
-static void delay_ms(uint32_t ms) {
-    uint32_t start = g_ticks;
-    uint32_t ticks = (SYSTICK_HZ * ms) / 1000u;
-    if (ticks == 0) ticks = 1; // abfangen für sehr kleine ms
-    while ((uint32_t)(g_ticks - start) < ticks) {
-        os_poll();
-        __WFI();
+    for (unsigned k = 0; k < REPEAT_BURSTS; k++) {
+        // print multiple chars per timeslice so you get "AAA!AAA" patterns
+        for (unsigned j = 0; j < BURST_LEN; j++) {
+            uart2_putc(c);
+        }
+        // small pause (must be SHORTER than your timeslice, otherwise you'll still get 1-char lines)
+        busy_pause(PAUSE_LOOPS);
     }
+
+    os_thread_exit();
 }
 
-
+static void rx_spawn_cb(uint8_t b) {
+    // Called INSIDE USART2 IRQ (task requirement)
+    (void)os_thread_create_from_isr(worker_thread, (void*)(uintptr_t)b);
+}
 
 int main(void) {
-    init_stacks();          // hast du schon :contentReference[oaicite:4]{index=4}
-    uart2_init(115200);     // hast du schon :contentReference[oaicite:5]{index=5}
-    systick_init();
+    uart2_init(115200);
+
+    os_init();
+    uart2_set_rx_callback(rx_spawn_cb);
+
+    systick_init();          // SysTick prints '!' and triggers PendSV
     uart2_enable_rx_irq();
+
     __enable_irq();
 
-    uart_printf("Ready. Press a key...\n");
+    uart_printf("Ready. Press keys...\n");
+    os_start();              // never returns
 
-    // OS initialisieren und Scheduler starten. Threads werden
-    // aus dem UART-IRQ erzeugt (siehe uart.c).
-    os_init();
-    os_start();
-
-    // os_start sollte nicht zurückkehren
-    for(;;) __WFI();
+    while (1) { }
 }

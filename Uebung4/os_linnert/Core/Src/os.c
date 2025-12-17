@@ -2,165 +2,189 @@
 #include "stm32l4xx.h"
 #include "uart.h"
 
-typedef enum { THREAD_FREE = 0, THREAD_READY, THREAD_RUNNING, THREAD_DEAD } thread_state_t;
+typedef enum {
+    T_UNUSED = 0,
+    T_READY  = 1,
+    T_RUNNING= 2,
+    T_ZOMBIE = 3,
+} t_state_t;
 
-static uint32_t *sp_table[OS_MAX_THREADS];      // Stack pointers for each thread
-static thread_state_t state_table[OS_MAX_THREADS];      // State of each thread (Free, Ready, Running, Dead)
-static uint32_t stacks[OS_MAX_THREADS][OS_STACK_WORDS]; // Stacks for each thread
-static int current = -1;        // Index of current running thread, -1 if none
-static int thread_count = 0;    // #Threads
+typedef struct
+{
+    uint32_t *sp;      // gespeicherter PSP (zeigt auf das gesicherte R4..R11-Fenster)
+    t_state_t state;
+} tcb_t;
 
-// Default xPSR value with Thumb bit set
-// Hier stehen APSR (condition flags), EPSR (execution state), IPSR (exception number) drinne
-static const uint32_t initial_xpsr = 0x01000000U; 
+#define OS_IDLE_INDEX   (OS_MAX_USER_THREADS)
 
-// OS Grundstrukturen initialisieren
-void os_init(void) {
-    for (int i = 0; i < OS_MAX_THREADS; i++) {
-        sp_table[i] = NULL;     // alle stack pointer auf NULL setzen
-        state_table[i] = THREAD_FREE;     // alle threads auf FREE setzen
+static tcb_t     g_tcb[OS_MAX_USER_THREADS + 1];
+static uint32_t  g_stacks[OS_MAX_USER_THREADS + 1][OS_STACK_WORDS] __attribute__((aligned(8)));
+
+static volatile int32_t  g_current = -1;      // -1 heißt: Bootstrap/noch kein Thread aktiv
+static volatile uint32_t g_time_ms = 0;
+
+// Bootstrap-PSP-Stack, damit die erste PendSV nicht direkt einen frischen Thread-Stack zerschießt
+static uint32_t g_boot_psp_stack[128] __attribute__((aligned(8)));
+
+static uint32_t* prepare_stack(uint32_t *stack_top, os_thread_fn_t fn, void *arg) {
+    uintptr_t top = (uintptr_t)stack_top;
+    top &= ~(uintptr_t)0x7u;  // auf 8-Byte ausrichten, sonst meckert der Cortex
+    uint32_t *sp = (uint32_t*)top;
+
+    // Hardware-speicherrahmen (8 Worte): R0 R1 R2 R3 R12 LR PC xPSR
+    *(--sp) = 0x01000000u;                 // xPSR (Thumb-Bit gesetzt)
+    *(--sp) = (uint32_t)(uintptr_t)fn;     // PC (Startadresse vom Thread)
+    *(--sp) = (uint32_t)(uintptr_t)os_thread_exit; // LR, falls der Thread frech zurückkehrt
+    *(--sp) = 0u;                          // R12
+    *(--sp) = 0u;                          // R3
+    *(--sp) = 0u;                          // R2
+    *(--sp) = 0u;                          // R1
+    *(--sp) = (uint32_t)(uintptr_t)arg;    // R0 (Argument reinstecken)
+
+    // Platz für PendSV-Handsave/-restore: R4..R11 (8 Worte)
+    sp -= 8;
+    for (int i = 0; i < 8; i++) sp[i] = 0u;
+
+    return sp; // zeigt jetzt genau auf den R4..R11-Block
+}
+
+static void idle_thread(void *arg) {
+    (void)arg;
+    for (;;) {
+        __WFI();
     }
 }
 
-static void prepare_stack(int id, thread_fn_t fn, void *arg) {
-    uint32_t *sp = &stacks[id][OS_STACK_WORDS];
-    // space for R4-R11 (saved by PendSV)
-    sp -= 8;
-    for (int i = 0; i < 8; i++) sp[i] = 0;
-    // exception stack frame (xPSR, PC, LR, R12, R3, R2, R1, R0)
-    sp -= 8;
-    sp[0] = initial_xpsr;             // xPSR
-    sp[1] = (uint32_t)fn;             // PC
-    sp[2] = (uint32_t)os_thread_exit; // LR -> when thread returns
-    sp[3] = 0; // R12
-    sp[4] = 0; // R3
-    sp[5] = 0; // R2
-    sp[6] = 0; // R1
-    sp[7] = (uint32_t)arg; // R0 (argument)
-    sp_table[id] = sp;
+static int pick_next(void) {
+    // Round-Robin über READY-User-Threads, ansonsten geht's in den Idle
+    int start = (g_current < 0) ? 0 : (int)((g_current + 1) % (int)(OS_MAX_USER_THREADS + 1));
+
+    for (unsigned i = 0; i < OS_MAX_USER_THREADS; i++) {
+        int idx = (start + (int)i) % (int)(OS_MAX_USER_THREADS);
+        if (g_tcb[idx].state == T_READY) return idx;
+    }
+
+    return OS_IDLE_INDEX;
 }
 
-// Neuen Thread erstellen (nicht ISR - Interrupt Service Routine)
-int os_thread_create(thread_fn_t fn, void *arg) {
-    __disable_irq();
-    // wir gehen alle state_table durch und suchen freien slot
-    for (int i = 0; i < OS_MAX_THREADS; i++) {
-        if (state_table[i] == THREAD_FREE) {
-            prepare_stack(i, fn, arg);
-            state_table[i] = THREAD_READY;
-            thread_count++;
-            __enable_irq();
-            return i; // return thread id und gehen damit aus for-Schleife
+static int alloc_user_slot(void) {
+    for (unsigned i = 0; i < OS_MAX_USER_THREADS; i++) {
+        if (g_tcb[i].state == T_UNUSED || g_tcb[i].state == T_ZOMBIE) {
+            return (int)i;
         }
+    }
+    return -1;
+}
+
+void os_init(void) {
+    NVIC_SetPriority(PendSV_IRQn, 15);
+    NVIC_SetPriority(SysTick_IRQn, 14);
+
+    for (unsigned i = 0; i < (OS_MAX_USER_THREADS + 1); i++) {
+        g_tcb[i].sp = 0;
+        g_tcb[i].state = T_UNUSED;
+    }
+
+    // Idle-Thread zum Chillen, falls keiner was zu tun hat
+    uint32_t *top = &g_stacks[OS_IDLE_INDEX][OS_STACK_WORDS];
+    g_tcb[OS_IDLE_INDEX].sp = prepare_stack(top, idle_thread, 0);
+    g_tcb[OS_IDLE_INDEX].state = T_READY;
+
+    g_current = -1;
+    g_time_ms = 0;
+}
+
+int os_thread_create(os_thread_fn_t fn, void *arg) {
+    __disable_irq();
+    int slot = alloc_user_slot();
+    if (slot >= 0) {
+        uint32_t *top = &g_stacks[slot][OS_STACK_WORDS];
+        g_tcb[slot].sp = prepare_stack(top, fn, arg);
+        g_tcb[slot].state = T_READY;
     }
     __enable_irq();
-    return -1; // kein freier slot gefunden
+    return slot;
 }
 
-// Neuen Thread erstellen aus ISR Kontext
-int os_thread_create_from_isr(thread_fn_t fn, void *arg) {
-    for (int i = 0; i < OS_MAX_THREADS; i++) {
-        if (state_table[i] == THREAD_FREE) {
-            prepare_stack(i, fn, arg);
-            state_table[i] = THREAD_READY;
-            thread_count++;
-            return i;
-        }
+int os_thread_create_from_isr(os_thread_fn_t fn, void *arg) {
+    int slot = alloc_user_slot();
+    if (slot >= 0) {
+        uint32_t *top = &g_stacks[slot][OS_STACK_WORDS];
+        g_tcb[slot].sp = prepare_stack(top, fn, arg);
+        g_tcb[slot].state = T_READY;
     }
-    return -1;
-}
-
-// scheduler helper called from PendSV (or assembly)
-int pick_next(void) {
-    if (thread_count == 0) return -1;
-    int start = (current < 0) ? 0 : (current + 1) % OS_MAX_THREADS;
-    for (int i = 0; i < OS_MAX_THREADS; i++) {
-        int idx = (start + i) % OS_MAX_THREADS;
-        if (state_table[idx] == THREAD_READY) return idx;
-    }
-    return -1;
-}
-
-// expose current for assembly via function
-int os_get_current(void) {
-    return current;
-}
-
-// store given sp for index
-void os_store_sp(int idx, uint32_t *sp) {
-    if (idx < 0 || idx >= OS_MAX_THREADS) return;
-    sp_table[idx] = sp;
+    return slot;
 }
 
 void os_yield(void) {
     SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __DSB(); __ISB();
 }
 
 void os_thread_exit(void) {
     __disable_irq();
-    if (current >= 0) {
-        state_table[current] = THREAD_DEAD;
-        sp_table[current] = NULL;
-        thread_count--;
+    int cur = (int)g_current;
+    if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
+        g_tcb[cur].state = T_ZOMBIE;
     }
-    // trigger context switch
+    __enable_irq();
+
+    os_yield();
+    for (;;) __WFI();
+}
+
+uint32_t os_time_ms(void) {
+    return g_time_ms;
+}
+
+void os_sleep_ms(uint32_t ms) {
+    uint32_t start = os_time_ms();
+    while ((uint32_t)(os_time_ms() - start) < ms) {
+        __WFI();
+    }
+}
+
+void os_tick_isr(void) {
+    g_time_ms += OS_TIME_SLICE_MS;
     SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-    for(;;) { __WFI(); }
 }
 
-// This function is called from PendSV handler (assembly) after pick_next
-// Expose helpers for assembly
-int os_set_current(int idx) {
-    if (idx < 0) {
-        current = -1;
-        return -1;
-    }
-    current = idx;
-    state_table[current] = THREAD_RUNNING;
-    return current;
-}
-
-uint32_t *os_get_sp(int idx) {
-    if (idx < 0) return NULL;
-    return sp_table[idx];
-}
-
-// Start the OS: set PendSV priority low and start first thread by exception return
 void os_start(void) {
-    // make PendSV lowest priority
-    // 0 = highest, larger = lower priority. Use priority 15 (assuming 4-bit priorities)
-    NVIC_SetPriority(PendSV_IRQn, 15);
-
-    // pick first thread
-    int next = pick_next();
-    if (next < 0) {
-        // nothing to run -> idle forever
-        for(;;) { __WFI(); }
-    }
-    current = next;
-    state_table[current] = THREAD_RUNNING;
-
-    // set PSP to thread SP and switch to using PSP
-    __set_PSP((uint32_t)sp_table[current]);
-    // set CONTROL: use PSP (bit1 = 1), remain privileged (bit0 = 0)
-    __set_CONTROL((__get_CONTROL() & ~1) | 2);
+    // Thread-Mode nutzt PSP, aber wir starten mit dem BOOT-PSP, damit die erste PendSV keinen echten Stack zerlegt
+    __set_PSP((uint32_t)(g_boot_psp_stack + (sizeof(g_boot_psp_stack)/sizeof(g_boot_psp_stack[0]))));
+    __set_CONTROL((__get_CONTROL() & ~1u) | 2u); // privileged + PSP
     __ISB();
 
-    // perform exception return to thread (use special EXC_RETURN value)
-    __asm volatile (
-        "MOV LR, #0xFFFFFFFD\n" // return using PSP, Thread mode
-        "BX LR\n"
-    );
+    g_current = -1;
+
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __DSB(); __ISB();
+
+    for (;;) __WFI();
 }
 
-// demo worker: print received char 5 times then exit
-void thread_echo_worker(void *arg) {
-    char c = (char)(uintptr_t)arg;
-    for (int i = 0; i < 5; i++) {
-        uart2_putc(c);
-        // small busy wait
-        for (volatile uint32_t d = 0; d < 200000u; d++) __asm__("nop");
-        os_yield();
+// ---- called from PendSV_Handler (assembly) ----
+uint32_t* os_pendsv_schedule(uint32_t *cur_sp) {
+    int cur = (int)g_current;
+
+    // Save current thread if there is one
+    if (cur >= 0) {
+        if (g_tcb[cur].state == T_RUNNING) {
+            g_tcb[cur].state = T_READY;
+        }
+        g_tcb[cur].sp = cur_sp;
     }
-    os_thread_exit();
+
+    int next = pick_next();
+
+    // Vorgabe: Bei jedem echten Context-Switch (also wenn Thread wechselt) einmal \r\n ausgeben
+    if (next != cur && cur >= 0) {
+        uart2_putc('\r');
+        uart2_putc('\n');
+    }
+
+    g_current = next;
+    g_tcb[next].state = T_RUNNING;
+
+    return g_tcb[next].sp;
 }

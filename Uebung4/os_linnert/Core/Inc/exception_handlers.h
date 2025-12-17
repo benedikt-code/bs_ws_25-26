@@ -5,19 +5,16 @@
  *      Author: andre
  */
 
-#ifndef INC_EXCEPTION_HANDLERS_H_
-#define INC_EXCEPTION_HANDLERS_H_
-
-// Tick-Frequenz (IRQ-Frequenz)
-#define SYSTICK_HZ 1000u
-
+#pragma once
 #include <stdint.h>
+
+// (timer interrupt printed '!' und triggert PendSV)
+#define SYSTICK_HZ   (1000u / OS_TIME_SLICE_MS)
 
 void systick_init(void);
 
-void init_stacks(void);
-
-void test_exceptions(char);
+void SysTick_Handler(void);
+void PendSV_Handler(void);
 
 void NMI_Handler(void);
 void HardFault_Handler(void);
@@ -26,5 +23,3 @@ void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void SVC_Handler(void);
 void SysTick_Handler(void);
-
-#endif /* INC_EXCEPTION_HANDLERS_H_ */

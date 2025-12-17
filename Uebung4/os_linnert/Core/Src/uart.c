@@ -1,6 +1,6 @@
 #include "stm32l4xx.h"
 #include <stdint.h>
-#include "os.h"
+#include "uart.h"
 
 #ifndef PCLK1_HZ
 #define PCLK1_HZ 4000000u  // MSI ~4 MHz at reset
@@ -17,6 +17,12 @@ static volatile uint16_t rx_head = 0;
 static volatile uint16_t rx_tail = 0;
 // overflow zeigt wenn Buffer voll ist
 static volatile uint8_t  rx_overflow = 0;
+
+static uart2_rx_callback_t g_rx_cb = 0;
+
+void uart2_set_rx_callback(uart2_rx_callback_t cb) {
+    g_rx_cb = cb;
+}
 
 static inline void gpio_af7_usart2_pa2_pd6(void) {
 	//Bus AHB2ENR Zugriff - Ports A und D "freischalten"(für Pin A2, D6)
@@ -137,7 +143,6 @@ void uart2_init(uint32_t baud) {
 	NVIC_SetPriority(USART2_IRQn, 5);
 	NVIC_EnableIRQ(USART2_IRQn);
 }
-
 // Sendet 1 Zeichen (char c)
 void uart2_putc(char c) {
 	// Wenn Transmit Data Register (TDR) leer (=1): dann dürfen wir ein neues Byte schreiben
@@ -216,12 +221,14 @@ void USART2_IRQHandler(void) {
             // schreibe b an stelle rx_head und verschiebe auf neue position
             rx_buf[rx_head] = b;
             rx_head = next;
-            // zusätzlich: erzeugen eines Threads direkt aus IRQ (Demonstration)
-            // ignorieren von Fehlern (wenn keine TCB frei ist)
-            (void)os_thread_create_from_isr(thread_echo_worker, (void*)(uintptr_t)b);
         } else {
             // aktuell nur zur Fehlererkennung
             rx_overflow = 1; // buffer voll: drop b
+        }
+
+        // Neuen Thread in IRQ Kontext callback aufrufen wenn gesetzt
+        if (g_rx_cb) {
+            g_rx_cb(b);
         }
     }
 
