@@ -195,12 +195,13 @@ void SVC_Handler(void) {
         case SYS_THREAD_CREATE: {
             os_thread_fn_t fn = (os_thread_fn_t)stack_frame[0];
             void *arg = (void*)stack_frame[1];
-            int tid = os_thread_create(fn, arg);
+            // Nutze _from_isr Version da wir bereits im Handler-Mode sind
+            int tid = os_thread_create_from_isr(fn, arg);
             stack_frame[0] = (uint32_t)tid;
         } break;
 
         case SYS_THREAD_EXIT: {
-            os_thread_exit(); // does not return
+            os_k_thread_exit(); // setzt state auf ZOMBIE und triggert PendSV
         } break;
 
         case SYS_SLEEP_MS: {
@@ -217,9 +218,6 @@ void SVC_Handler(void) {
 // SysTick ISR
 // Wird bei jedem Timer-underflow aufgerufen. ISR kurz halten --> nur Flags setzen
 void SysTick_Handler(void) {
-    // Timer Interrupt: print '!' auf jeder Timer-Interrupt
-    uart2_putc('!');
-
     // Update OS Zeit und fordere Kontextwechsel an
     os_tick_isr();
 }

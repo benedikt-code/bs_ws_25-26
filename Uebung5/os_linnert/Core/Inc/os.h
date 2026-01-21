@@ -8,7 +8,7 @@ extern "C" {
 // ===== Config =====
 #define OS_MAX_USER_THREADS   16u        
 #define OS_STACK_WORDS        256u       // 256 words = 1024 bytes pro thread stack
-#define OS_TIME_SLICE_MS      50u        // timeslice (SysTick interval)
+#define OS_TIME_SLICE_MS      10u        // timeslice (SysTick interval)
 
 // ===== Types =====
 // 
@@ -54,6 +54,7 @@ typedef enum {
 // Kernel-intern: Funktionen die vom SVC-Dispatcher genutzt werden
 int  os_k_getchar_blocking(void);
 void os_k_sleep_blocking(uint32_t ms);
+void os_k_thread_exit(void);
 
 #ifdef __cplusplus
 }

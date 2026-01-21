@@ -54,12 +54,14 @@ static void idle_thread(void *arg) {
 }
 
 // Callback vom UART-Driver (wird in os_init registriert)
-static void uart_rx_cb(uint8_t b) {
+// Rückgabe: 1 wenn ein Thread geweckt wurde (Byte konsumiert), 0 sonst
+static int uart_rx_cb(uint8_t b) {
     int32_t waiter = g_waiting_for_input;
     if (waiter >= 0 && waiter < (int32_t)OS_MAX_USER_THREADS) {
         uint32_t *sp = g_tcb_array[waiter].sp;
         if (sp) {
-            uint32_t *hwframe = sp - 8; // Hardware-stacked frame liegt oberhalb des R4..R11-Blocks
+            // sp zeigt auf R4..R11 Block (8 Worte), Hardware-Frame liegt darüber (höhere Adressen)
+            uint32_t *hwframe = sp + 8; // Hardware-stacked frame liegt oberhalb des R4..R11-Blocks
             hwframe[0] = (uint32_t)b;  // R0 = Rückgabewert für getchar
         }
         g_waiting_for_input = -1;
@@ -67,7 +69,9 @@ static void uart_rx_cb(uint8_t b) {
         // Kontextwechsel anfordern, damit der geweckte Thread ggf. laufen kann
         SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
         __DSB(); __ISB();
+        return 1;  // Byte wurde konsumiert (nicht in Ringbuffer speichern)
     }
+    return 0;  // Kein wartender Thread, Byte soll in Ringbuffer
 }
 
 static int pick_next(void) {
@@ -151,6 +155,19 @@ void os_thread_exit(void) {
 
     os_yield();
     for (;;) __WFI();
+}
+
+// Kernel-Version: Wird vom SVC-Dispatcher aufgerufen (kein infinite loop, da SVC returnen muss)
+void os_k_thread_exit(void) {
+    __disable_irq();
+    int cur = (int)g_current;
+    if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
+        g_tcb_array[cur].state = T_ZOMBIE;
+    }
+    __enable_irq();
+
+    // PendSV anfordern - wird nach SVC-Return ausgeführt
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 }
 
 uint32_t os_time_ms(void) {
@@ -239,12 +256,6 @@ uint32_t* os_pendsv_schedule(uint32_t *cur_sp) {
     }
 
     int next = pick_next();
-
-    // Vorgabe: Bei jedem echten Context-Switch (also wenn Thread wechselt) einmal \r\n ausgeben
-    if (next != cur && cur >= 0) {
-        uart2_putc('\r');
-        uart2_putc('\n');
-    }
 
     g_current = next;
     g_tcb_array[next].state = T_RUNNING;

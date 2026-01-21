@@ -214,22 +214,29 @@ void USART2_IRQHandler(void) {
     if (isr & USART_ISR_RXNE) {
         // lesen des Bytes
         uint8_t b = (uint8_t)USART2->RDR;    // reading cleart RXNE
-        // bestimmt nächste Position über Modulo (16 bit damit wir über 8 gehen können und modulo regelt)
-        uint16_t next = (uint16_t)((rx_head + 1u) % UART2_RX_BUF_SIZE);
 
-        // wenn next == rx_tail wäre unser ringbuffer voll, wir würden überschreiben wo das Programm lesen soll
-        if (next != rx_tail) {
-            // schreibe b an stelle rx_head und verschiebe auf neue position
-            rx_buf[rx_head] = b;
-            rx_head = next;
-        } else {
-            // aktuell nur zur Fehlererkennung
-            rx_overflow = 1; // buffer voll: drop b
+        // Wenn ein Callback registriert ist, rufen wir ihn auf
+        // Der Callback entscheidet, ob das Byte verarbeitet wurde (return 1) oder nicht (return 0)
+        // Bei Rückgabe von 1 wird das Byte NICHT im Ringbuffer gespeichert
+        int consumed = 0;
+        if (g_rx_cb) {
+            consumed = g_rx_cb(b);
         }
 
-        // Neuen Thread in IRQ Kontext callback aufrufen wenn gesetzt
-        if (g_rx_cb) {
-            g_rx_cb(b);
+        // Nur in Ringbuffer speichern wenn Callback das Byte nicht konsumiert hat
+        if (!consumed) {
+            // bestimmt nächste Position über Modulo (16 bit damit wir über 8 gehen können und modulo regelt)
+            uint16_t next = (uint16_t)((rx_head + 1u) % UART2_RX_BUF_SIZE);
+
+            // wenn next == rx_tail wäre unser ringbuffer voll, wir würden überschreiben wo das Programm lesen soll
+            if (next != rx_tail) {
+                // schreibe b an stelle rx_head und verschiebe auf neue position
+                rx_buf[rx_head] = b;
+                rx_head = next;
+            } else {
+                // aktuell nur zur Fehlererkennung
+                rx_overflow = 1; // buffer voll: drop b
+            }
         }
     }
 

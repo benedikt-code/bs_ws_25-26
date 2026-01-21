@@ -14,7 +14,8 @@ __attribute__((format(printf, 1, 2)))
 int uart_printf(const char *fmt, ...);
 
 // RX callback aufgerufen von USART2 IRQ nachdem Erhalten eines Bytes
-typedef void (*uart2_rx_callback_t)(uint8_t b);
+// Rückgabe: 1 wenn Byte konsumiert (nicht in Ringbuffer), 0 sonst
+typedef int (*uart2_rx_callback_t)(uint8_t b);
 void uart2_set_rx_callback(uart2_rx_callback_t cb);
 
 // IRQ handler 
