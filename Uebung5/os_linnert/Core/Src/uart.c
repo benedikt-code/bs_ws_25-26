@@ -138,9 +138,10 @@ void uart2_init(uint32_t baud) {
 	// optional: enable error interrupts
 	USART2->CR3 |= USART_CR3_EIE;
 
-	// enable NVIC line for USART2
+	// enable NVIC (nested vector interrupt control) line for USART2
 	NVIC_ClearPendingIRQ(USART2_IRQn);
 	NVIC_SetPriority(USART2_IRQn, 5);
+    // IRQ (Interrupt Request)
 	NVIC_EnableIRQ(USART2_IRQn);
 }
 // Sendet 1 Zeichen (char c)

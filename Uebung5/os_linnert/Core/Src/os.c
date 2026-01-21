@@ -10,8 +10,8 @@ typedef struct
 
 #define OS_IDLE_INDEX   (OS_MAX_USER_THREADS)
 
-static tcb_t     g_tcb[OS_MAX_USER_THREADS + 1];
-static uint32_t  g_stacks[OS_MAX_USER_THREADS + 1][OS_STACK_WORDS] __attribute__((aligned(8)));
+static tcb_t     g_tcb_array[OS_MAX_USER_THREADS + 1];
+static uint32_t  g_tcb_stacks[OS_MAX_USER_THREADS + 1][OS_STACK_WORDS] __attribute__((aligned(8)));
 
 static volatile int32_t  g_current = -1;      // -1 heißt: Bootstrap/noch kein Thread aktiv
 static volatile uint32_t g_time_ms = 0;
@@ -22,6 +22,7 @@ static volatile int32_t g_waiting_for_input = -1;
 // Bootstrap-PSP-Stack, damit die erste PendSV nicht direkt einen frischen Thread-Stack zerschießt
 static uint32_t g_boot_psp_stack[128] __attribute__((aligned(8)));
 
+// fake exception stack frame (zum initialisieren des Stacks)
 static uint32_t* prepare_stack(uint32_t *stack_top, os_thread_fn_t fn, void *arg) {
     uintptr_t top = (uintptr_t)stack_top;
     top &= ~(uintptr_t)0x7u;  // auf 8-Byte ausrichten, sonst meckert der Cortex
@@ -55,13 +56,13 @@ static void idle_thread(void *arg) {
 static void uart_rx_cb(uint8_t b) {
     int32_t waiter = g_waiting_for_input;
     if (waiter >= 0 && waiter < (int32_t)OS_MAX_USER_THREADS) {
-        uint32_t *sp = g_tcb[waiter].sp;
+        uint32_t *sp = g_tcb_array[waiter].sp;
         if (sp) {
             uint32_t *hwframe = sp - 8; // Hardware-stacked frame liegt oberhalb des R4..R11-Blocks
             hwframe[0] = (uint32_t)b;  // R0 = Rückgabewert für getchar
         }
         g_waiting_for_input = -1;
-        g_tcb[waiter].state = T_READY;
+        g_tcb_array[waiter].state = T_READY;
         // Kontextwechsel anfordern, damit der geweckte Thread ggf. laufen kann
         SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
         __DSB(); __ISB();
@@ -74,7 +75,7 @@ static int pick_next(void) {
 
     for (unsigned i = 0; i < OS_MAX_USER_THREADS; i++) {
         int idx = (start + (int)i) % (int)(OS_MAX_USER_THREADS);
-        if (g_tcb[idx].state == T_READY) return idx;
+        if (g_tcb_array[idx].state == T_READY) return idx;
     }
 
     return OS_IDLE_INDEX;
@@ -82,7 +83,7 @@ static int pick_next(void) {
 
 static int alloc_user_slot(void) {
     for (unsigned i = 0; i < OS_MAX_USER_THREADS; i++) {
-        if (g_tcb[i].state == T_UNUSED || g_tcb[i].state == T_ZOMBIE) {
+        if (g_tcb_array[i].state == T_UNUSED || g_tcb_array[i].state == T_ZOMBIE) {
             return (int)i;
         }
     }
@@ -90,18 +91,19 @@ static int alloc_user_slot(void) {
 }
 
 void os_init(void) {
+    // Pending supervisor responsible for context switching should have lowest priority
     NVIC_SetPriority(PendSV_IRQn, 15);
     NVIC_SetPriority(SysTick_IRQn, 14);
 
     for (unsigned i = 0; i < (OS_MAX_USER_THREADS + 1); i++) {
-        g_tcb[i].sp = 0;
-        g_tcb[i].state = T_UNUSED;
+        g_tcb_array[i].sp = 0;
+        g_tcb_array[i].state = T_UNUSED;
     }
 
     // Idle-Thread zum Chillen, falls keiner was zu tun hat
-    uint32_t *top = &g_stacks[OS_IDLE_INDEX][OS_STACK_WORDS];
-    g_tcb[OS_IDLE_INDEX].sp = prepare_stack(top, idle_thread, 0);
-    g_tcb[OS_IDLE_INDEX].state = T_READY;
+    uint32_t *top = &g_tcb_stacks[OS_IDLE_INDEX][OS_STACK_WORDS];
+    g_tcb_array[OS_IDLE_INDEX].sp = prepare_stack(top, idle_thread, 0);
+    g_tcb_array[OS_IDLE_INDEX].state = T_READY;
 
     g_current = -1;
     g_time_ms = 0;
@@ -115,9 +117,9 @@ int os_thread_create(os_thread_fn_t fn, void *arg) {
     __disable_irq();
     int slot = alloc_user_slot();
     if (slot >= 0) {
-        uint32_t *top = &g_stacks[slot][OS_STACK_WORDS];
-        g_tcb[slot].sp = prepare_stack(top, fn, arg);
-        g_tcb[slot].state = T_READY;
+        uint32_t *top = &g_tcb_stacks[slot][OS_STACK_WORDS];
+        g_tcb_array[slot].sp = prepare_stack(top, fn, arg);
+        g_tcb_array[slot].state = T_READY;
     }
     __enable_irq();
     return slot;
@@ -126,9 +128,9 @@ int os_thread_create(os_thread_fn_t fn, void *arg) {
 int os_thread_create_from_isr(os_thread_fn_t fn, void *arg) {
     int slot = alloc_user_slot();
     if (slot >= 0) {
-        uint32_t *top = &g_stacks[slot][OS_STACK_WORDS];
-        g_tcb[slot].sp = prepare_stack(top, fn, arg);
-        g_tcb[slot].state = T_READY;
+        uint32_t *top = &g_tcb_stacks[slot][OS_STACK_WORDS];
+        g_tcb_array[slot].sp = prepare_stack(top, fn, arg);
+        g_tcb_array[slot].state = T_READY;
     }
     return slot;
 }
@@ -142,7 +144,7 @@ void os_thread_exit(void) {
     __disable_irq();
     int cur = (int)g_current;
     if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
-        g_tcb[cur].state = T_ZOMBIE;
+        g_tcb_array[cur].state = T_ZOMBIE;
     }
     __enable_irq();
 
@@ -164,9 +166,9 @@ void os_tick_isr(void) {
 
     // Wake up sleeping threads whose wakeup_ms <= now
     for (unsigned i = 0; i < OS_MAX_USER_THREADS; i++) {
-        if (g_tcb[i].state == T_BLOCKED_SLEEP) {
-            if ((int32_t)(g_time_ms - g_tcb[i].wakeup_ms) >= 0) {
-                g_tcb[i].state = T_READY;
+        if (g_tcb_array[i].state == T_BLOCKED_SLEEP) {
+            if ((int32_t)(g_time_ms - g_tcb_array[i].wakeup_ms) >= 0) {
+                g_tcb_array[i].state = T_READY;
             }
         }
     }
@@ -183,7 +185,7 @@ int os_k_getchar_blocking(void) {
     __disable_irq();
     int cur = (int)g_current;
     if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
-        g_tcb[cur].state = T_BLOCKED_IO;
+        g_tcb_array[cur].state = T_BLOCKED_IO;
         g_waiting_for_input = cur;
     }
     __enable_irq();
@@ -199,8 +201,8 @@ void os_k_sleep_blocking(uint32_t ms) {
     __disable_irq();
     int cur = (int)g_current;
     if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
-        g_tcb[cur].state = T_BLOCKED_SLEEP;
-        g_tcb[cur].wakeup_ms = g_time_ms + ms;
+        g_tcb_array[cur].state = T_BLOCKED_SLEEP;
+        g_tcb_array[cur].wakeup_ms = g_time_ms + ms;
     }
     __enable_irq();
 
@@ -229,10 +231,10 @@ uint32_t* os_pendsv_schedule(uint32_t *cur_sp) {
 
     // Save current thread if there is one
     if (cur >= 0) {
-        if (g_tcb[cur].state == T_RUNNING) {
-            g_tcb[cur].state = T_READY;
+        if (g_tcb_array[cur].state == T_RUNNING) {
+            g_tcb_array[cur].state = T_READY;
         }
-        g_tcb[cur].sp = cur_sp;
+        g_tcb_array[cur].sp = cur_sp;
     }
 
     int next = pick_next();
@@ -244,7 +246,7 @@ uint32_t* os_pendsv_schedule(uint32_t *cur_sp) {
     }
 
     g_current = next;
-    g_tcb[next].state = T_RUNNING;
+    g_tcb_array[next].state = T_RUNNING;
 
-    return g_tcb[next].sp;
+    return g_tcb_array[next].sp;
 }

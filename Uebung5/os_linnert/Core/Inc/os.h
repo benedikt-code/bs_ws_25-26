@@ -11,6 +11,7 @@ extern "C" {
 #define OS_TIME_SLICE_MS      50u        // timeslice (SysTick interval)
 
 // ===== Types =====
+// 
 typedef void (*os_thread_fn_t)(void *arg);
 
 // ===== API =====
