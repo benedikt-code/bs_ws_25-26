@@ -50,13 +50,6 @@ typedef enum {
 	T_BLOCKED_SLEEP,
 } t_state_t;
 
-// Kleine Erweiterung des TCB: Weckzeit für Sleep
-typedef struct {
-	uint32_t *sp;
-	t_state_t state;
-	uint32_t wakeup_ms;
-} os_tcb_ext_t;
-
 // Kernel-intern: Funktionen die vom SVC-Dispatcher genutzt werden
 int  os_k_getchar_blocking(void);
 void os_k_sleep_blocking(uint32_t ms);
