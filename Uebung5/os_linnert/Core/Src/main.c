@@ -16,6 +16,7 @@
  ******************************************************************************
  */
 #include <stdint.h>
+#include <stddef.h>
 #include "stm32l4xx.h"
 
 #include "uart.h"

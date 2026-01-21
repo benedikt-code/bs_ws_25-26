@@ -6,6 +6,7 @@ typedef struct
 {
     uint32_t *sp;      // gespeicherter PSP (zeigt auf das gesicherte R4..R11-Fenster)
     t_state_t state;
+	uint32_t wakeup_ms;
 } tcb_t;
 
 #define OS_IDLE_INDEX   (OS_MAX_USER_THREADS)
