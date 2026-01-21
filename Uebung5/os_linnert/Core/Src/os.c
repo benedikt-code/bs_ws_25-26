@@ -2,13 +2,6 @@
 #include "stm32l4xx.h"
 #include "uart.h"
 
-typedef enum {
-    T_UNUSED = 0,
-    T_READY  = 1,
-    T_RUNNING= 2,
-    T_ZOMBIE = 3,
-} t_state_t;
-
 typedef struct
 {
     uint32_t *sp;      // gespeicherter PSP (zeigt auf das gesicherte R4..R11-Fenster)
@@ -22,6 +15,9 @@ static uint32_t  g_stacks[OS_MAX_USER_THREADS + 1][OS_STACK_WORDS] __attribute__
 
 static volatile int32_t  g_current = -1;      // -1 heißt: Bootstrap/noch kein Thread aktiv
 static volatile uint32_t g_time_ms = 0;
+
+// Wartender Thread für getchar (Index des TCB), -1 = keiner
+static volatile int32_t g_waiting_for_input = -1;
 
 // Bootstrap-PSP-Stack, damit die erste PendSV nicht direkt einen frischen Thread-Stack zerschießt
 static uint32_t g_boot_psp_stack[128] __attribute__((aligned(8)));
@@ -52,6 +48,23 @@ static void idle_thread(void *arg) {
     (void)arg;
     for (;;) {
         __WFI();
+    }
+}
+
+// Callback vom UART-Driver (wird in os_init registriert)
+static void uart_rx_cb(uint8_t b) {
+    int32_t waiter = g_waiting_for_input;
+    if (waiter >= 0 && waiter < (int32_t)OS_MAX_USER_THREADS) {
+        uint32_t *sp = g_tcb[waiter].sp;
+        if (sp) {
+            uint32_t *hwframe = sp - 8; // Hardware-stacked frame liegt oberhalb des R4..R11-Blocks
+            hwframe[0] = (uint32_t)b;  // R0 = Rückgabewert für getchar
+        }
+        g_waiting_for_input = -1;
+        g_tcb[waiter].state = T_READY;
+        // Kontextwechsel anfordern, damit der geweckte Thread ggf. laufen kann
+        SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+        __DSB(); __ISB();
     }
 }
 
@@ -92,6 +105,10 @@ void os_init(void) {
 
     g_current = -1;
     g_time_ms = 0;
+
+    // Kernel-Callback für UART empfangene Bytes registrieren
+    // Wenn ein Thread auf getchar() blockiert, wird er hierauf aufgeweckt
+    uart2_set_rx_callback(uart_rx_cb);
 }
 
 int os_thread_create(os_thread_fn_t fn, void *arg) {
@@ -138,15 +155,58 @@ uint32_t os_time_ms(void) {
 }
 
 void os_sleep_ms(uint32_t ms) {
-    uint32_t start = os_time_ms();
-    while ((uint32_t)(os_time_ms() - start) < ms) {
-        __WFI();
-    }
+    // Blockierendes Sleep: TCB wird in T_BLOCKED_SLEEP geschoben und beim Tick geweckt
+    os_k_sleep_blocking(ms);
 }
 
 void os_tick_isr(void) {
     g_time_ms += OS_TIME_SLICE_MS;
+
+    // Wake up sleeping threads whose wakeup_ms <= now
+    for (unsigned i = 0; i < OS_MAX_USER_THREADS; i++) {
+        if (g_tcb[i].state == T_BLOCKED_SLEEP) {
+            if ((int32_t)(g_time_ms - g_tcb[i].wakeup_ms) >= 0) {
+                g_tcb[i].state = T_READY;
+            }
+        }
+    }
+
+    // request context switch
     SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+}
+
+// --- Kernel-side helpers invoked from SVC dispatcher ---
+int os_k_getchar_blocking(void) {
+    int c = uart2_getc_nonblocking();
+    if (c != -1) return c;
+
+    __disable_irq();
+    int cur = (int)g_current;
+    if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
+        g_tcb[cur].state = T_BLOCKED_IO;
+        g_waiting_for_input = cur;
+    }
+    __enable_irq();
+
+    // cause scheduler to run
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __DSB(); __ISB();
+
+    return -1; // actual return value will be injected by IRQ handler when data arrives
+}
+
+void os_k_sleep_blocking(uint32_t ms) {
+    __disable_irq();
+    int cur = (int)g_current;
+    if (cur >= 0 && cur < (int)OS_MAX_USER_THREADS) {
+        g_tcb[cur].state = T_BLOCKED_SLEEP;
+        g_tcb[cur].wakeup_ms = g_time_ms + ms;
+    }
+    __enable_irq();
+
+    // request context switch
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __DSB(); __ISB();
 }
 
 void os_start(void) {

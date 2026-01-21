@@ -3,6 +3,7 @@
 #include "system_stm32l4xx.h"
 #include "uart.h"
 #include "os.h"
+#include "syscalls.h"
 
 void systick_init(void) {
     // Reload-Wert berechnen: Timer zählt (reload+1) Takte bis zum Interrupt
@@ -172,29 +173,46 @@ void BusFault_Handler(void) {
 
 
 void SVC_Handler(void) {
-    uart_printf("\n=== SUPERVISOR CALL ===\n");
-
-    // SVC-Nummer aus der Instruktion extrahieren
+    // SVC dispatcher: Syscall-Nummer wird nach unserer Konvention in gestacktem r12 gespeichert
     uint32_t *stack_frame = (uint32_t*)__get_PSP();
-    uint32_t pc = stack_frame[6];
-    uint16_t *svc_instruction = (uint16_t*)(pc - 2);
-    uint8_t svc_number = *svc_instruction & 0xFF;
+    uint32_t svc_number = stack_frame[4]; // gestacktes r12
 
-    // Optional: Debug-Ausgabe zur SVC-Nummer
-    //uart_printf("SVC Number: 0x%x\n", svc_number);
-    //uart_printf("Called from PC: 0x%x\n", pc);
+    switch (svc_number) {
+        case SYS_PUTCHAR: {
+            int c = (int)stack_frame[0];
+            uart2_putc((char)c);
+            stack_frame[0] = 0; // Erfolg
+        } break;
 
-    // implementation für SVCs mit einem Beispiel
-    switch(svc_number) {
-        case 42:
-            uart_printf("SVC 42 called\n");
-            break;
+        case SYS_GETCHAR: {
+            int r = os_k_getchar_blocking();
+            if (r >= 0) {
+                stack_frame[0] = (uint32_t)r;
+            }
+            // if r == -1 the thread got blocked; actual return will be injected by IRQ when data arrives
+        } break;
+
+        case SYS_THREAD_CREATE: {
+            os_thread_fn_t fn = (os_thread_fn_t)stack_frame[0];
+            void *arg = (void*)stack_frame[1];
+            int tid = os_thread_create(fn, arg);
+            stack_frame[0] = (uint32_t)tid;
+        } break;
+
+        case SYS_THREAD_EXIT: {
+            os_thread_exit(); // does not return
+        } break;
+
+        case SYS_SLEEP_MS: {
+            uint32_t ms = stack_frame[0];
+            os_k_sleep_blocking(ms);
+            // blocked; return value will be irrelevant
+        } break;
+
         default:
-            uart_printf("Unknown SVC\n");
+            uart_printf("Unknown SVC: %u\n", svc_number);
             break;
     }
-
-    // wir brauchen keine endlosschleife weil es nur sagt, wir machen hier nen supervisor call
 }
 // SysTick ISR
 // Wird bei jedem Timer-underflow aufgerufen. ISR kurz halten --> nur Flags setzen

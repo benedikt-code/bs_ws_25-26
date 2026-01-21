@@ -21,6 +21,7 @@
 #include "uart.h"
 #include "os.h"
 #include "exception_handlers.h"
+#include "syscalls.h"
 
 #define REPEAT_BURSTS   40u     // how many bursts total (thread ends afterwards)
 #define BURST_LEN       1u      // how many letters printed back-to-back per burst
@@ -36,27 +37,31 @@ static void worker_thread(void *arg) {
     char c = (char)(uintptr_t)arg;
 
     for (unsigned k = 0; k < REPEAT_BURSTS; k++) {
-        // print multiple chars per timeslice so you get "AAA!AAA" patterns
         for (unsigned j = 0; j < BURST_LEN; j++) {
-            uart2_putc(c);
+            sys_putchar((int)c);
         }
-        // small pause (must be SHORTER than your timeslice, otherwise you'll still get 1-char lines)
-        busy_pause(PAUSE_LOOPS);
+
+        if (c >= 'A' && c <= 'Z') {
+            // active wait for uppercase (old behavior)
+            busy_pause(PAUSE_LOOPS);
+        } else {
+            // passive sleep via Syscall
+            sys_sleep_ms(OS_TIME_SLICE_MS);
+        }
     }
 
-    os_thread_exit();
-}
-
-static void rx_spawn_cb(uint8_t b) {
-    // Called INSIDE USART2 IRQ (task requirement)
-    (void)os_thread_create_from_isr(worker_thread, (void*)(uintptr_t)b);
+    sys_thread_exit();
 }
 
 int main(void) {
     uart2_init(115200);
 
+
     os_init();
-    uart2_set_rx_callback(rx_spawn_cb);
+
+    // create listener thread that blocks on sys_getchar()
+    extern void listener_thread(void *arg);
+    os_thread_create(listener_thread, NULL);
 
     systick_init();          // SysTick prints '!' and triggers PendSV
     uart2_enable_rx_irq();
@@ -67,4 +72,14 @@ int main(void) {
     os_start();              // never returns
 
     while (1) { }
+}
+
+// Listener thread: wartet blockierend auf Zeichen und erzeugt Worker-Threads
+void listener_thread(void *arg) {
+    (void)arg;
+    for (;;) {
+        int c = sys_getchar();
+        if (c < 0) continue; // should not happen, but guard
+        sys_thread_create(worker_thread, (void*)(uintptr_t)c);
+    }
 }
